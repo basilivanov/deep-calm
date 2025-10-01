@@ -82,10 +82,16 @@ docker compose exec dc-api alembic upgrade head
 ```
 
 ### Ports (DEV)
-- Frontend (Admin): http://127.0.0.1:**8083**
-- Backend API: http://127.0.0.1:**8082**
+- Frontend (Admin): http://127.0.0.1:**3000**
+- Backend API: http://127.0.0.1:**8000**
 - PostgreSQL: internal only (dc-dev-db)
 - Redis: internal only (dc-dev-redis)
+
+### Port Allocation (Simple Schema)
+- **dev**: Frontend=3000, API=8000
+- **test**: Frontend=3001, API=8001
+- **staging**: Frontend=3002, API=8002
+- **prod**: nginx reverse proxy (443/80)
 
 ### Container Names (стиль: dc-{env}-{service})
 - `dc-dev-admin` - Frontend
@@ -265,8 +271,8 @@ cat README.md                           # quick start
 ---
 
 **URLs (DEV):**
-- Frontend: http://127.0.0.1:8083
-- Backend API: http://127.0.0.1:8082/docs
+- Frontend: http://127.0.0.1:3000
+- Backend API: http://127.0.0.1:8000/docs
 
 **Last Session:** Phase 1 MVP completed + documentation update
 **Status:** Production-ready MVP ✅

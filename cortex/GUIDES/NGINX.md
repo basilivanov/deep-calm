@@ -14,12 +14,12 @@ NGINX используется как reverse proxy для маршрутиза�
 **Listen:** 80
 
 **Routing:**
-- `/api/healthz` → `http://127.0.0.1:8082/health` (Backend healthcheck)
-- `/api/*` → `http://127.0.0.1:8082/` (Backend API, слэш убирает /api prefix)
-- `/` → `http://127.0.0.1:8083` (Frontend admin)
+- `/api/healthz` → `http://127.0.0.1:8000/health` (Backend healthcheck)
+- `/api/*` → `http://127.0.0.1:8000/` (Backend API, слэш убирает /api prefix)
+- `/` → `http://127.0.0.1:3000` (Frontend admin)
 
-**Backend:** dc-dev-api (127.0.0.1:8082)
-**Frontend:** dc-dev-admin (127.0.0.1:8083)
+**Backend:** dc-dev-api (127.0.0.1:8000)
+**Frontend:** dc-dev-admin (127.0.0.1:3000)
 
 ### TEST Environment (`infra/nginx/test.conf`)
 
@@ -27,21 +27,24 @@ NGINX используется как reverse proxy для маршрутиза�
 **Listen:** 80
 
 **Routing:**
-- `/api/*` → `http://127.0.0.1:8182/` (Backend API test)
-- `/` → `http://127.0.0.1:8181` (Frontend test) ⚠️ НЕСООТВЕТСТВИЕ: конфиг указывает 8083, должно быть 8181
+- `/api/*` → `http://127.0.0.1:8001/` (Backend API test)
+- `/` → `http://127.0.0.1:3001` (Frontend test)
 
-**Backend:** dc-test-api (127.0.0.1:8182)
-**Frontend:** dc-test-admin (127.0.0.1:8181 или 8083?)
+**Backend:** dc-test-api (127.0.0.1:8001)
+**Frontend:** dc-test-admin (127.0.0.1:3001)
 
 ---
 
-## Port Allocation
+## Port Allocation (Simple Schema)
 
 | Environment | Frontend | Backend API | PostgreSQL | Redis |
 |-------------|----------|-------------|------------|-------|
-| **dev**     | 8083     | 8082        | internal   | internal |
-| **test**    | 8181     | 8182        | internal   | internal |
+| **dev**     | 3000     | 8000        | internal   | internal |
+| **test**    | 3001     | 8001        | internal   | internal |
+| **staging** | 3002     | 8002        | internal   | internal |
 | **prod**    | internal | internal    | internal   | internal |
+
+**Логика:** Простые стандартные порты с инкрементом для каждого окружения
 
 ---
 
@@ -148,7 +151,7 @@ sudo nginx -s reload
 
 ### 502 Bad Gateway
 - Проверить, что backend запущен: `docker ps | grep dc-dev-api`
-- Проверить порт: `curl http://127.0.0.1:8082/health`
+- Проверить порт: `curl http://127.0.0.1:8000/health`
 - Проверить логи nginx: `sudo tail -f /var/log/nginx/error.log`
 
 ### 504 Gateway Timeout
@@ -156,13 +159,15 @@ sudo nginx -s reload
 
 ### Connection refused
 - Проверить firewall: `sudo ufw status`
-- Проверить, что контейнеры слушают на 127.0.0.1: `netstat -tlnp | grep 808`
+- Проверить, что контейнеры слушают на 127.0.0.1:
+  - `netstat -tlnp | grep 3000` (frontend)
+  - `netstat -tlnp | grep 8000` (API)
 
 ---
 
 ## TODO
 
-- [ ] Исправить несоответствие в test.conf (frontend port)
+- [x] Исправлено: простая схема портов (3000/8000, 3001/8001, etc)
 - [ ] Добавить rate limiting для /api/v1/publishing
 - [ ] Настроить логирование в JSON формат
 - [ ] Добавить nginx status endpoint (/nginx_status)

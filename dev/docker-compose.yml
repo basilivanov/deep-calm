@@ -1,29 +1,35 @@
-name: dc_dev
+name: dcdev
 services:
   dc-db:
     image: postgres:16
-    container_name: dc_dev-db
+    container_name: dc-dev-db
     environment: { POSTGRES_DB: dc_dev, POSTGRES_USER: dc, POSTGRES_PASSWORD: dcpass }
     volumes: [ "./pgdata:/var/lib/postgresql/data" ]
-    ports: [ "127.0.0.1:5432:5432" ]
     restart: unless-stopped
-    healthcheck: { test: ["CMD-SHELL","pg_isready -U dc -d dc_dev || exit 1"], interval: 10s, timeout: 5s, retries: 10 }
+
   dc-redis:
     image: redis:7
-    container_name: dc_dev-redis
+    container_name: dc-dev-redis
     command: ["redis-server","--save","60","100","--loglevel","warning"]
     volumes: [ "./redisdata:/data" ]
-    ports: [ "127.0.0.1:6379:6379" ]
     restart: unless-stopped
+
   dc-admin:
-    image: nginx:alpine
-    container_name: dc_dev-admin
-    volumes: [ "./admin/html:/usr/share/nginx/html:ro" ]
-    ports: [ "127.0.0.1:8083:80" ]
+    image: deep-calm-frontend
+    container_name: dc-dev-admin
+    environment:
+      - HOST=0.0.0.0
+    ports: [ "127.0.0.1:3000:3000" ]
     restart: unless-stopped
+    depends_on: [ dc-api ]  # фронт ждёт api для стабильного старта
+
   dc-api:
-    image: alpine:3.20
-    container_name: dc_dev-api
-    command: ["/bin/sh","-lc","while true; do ( printf 'HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nok\n' | nc -lp 8080 -k ); done"]
-    ports: [ "127.0.0.1:8084:8080" ]
+    image: deep-calm-api
+    container_name: dc-dev-api
+    environment:
+      DC_ENV: dev
+      DC_DB_URL: postgresql://dc:dcpass@dc-db:5432/dc_dev
+      DC_REDIS_URL: redis://dc-redis:6379/0
+    ports: [ "127.0.0.1:8000:8000" ]
+    depends_on: [ dc-db, dc-redis ]
     restart: unless-stopped

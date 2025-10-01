@@ -43,9 +43,9 @@
   - deepcalm-db → **dc-dev-db**
   - deepcalm-redis → **dc-dev-redis**
 
-- **Порты** (было: localhost:5173/8000/5433/6378)
-  - Frontend: localhost:5173 → **127.0.0.1:8083**
-  - Backend: localhost:8000 → **127.0.0.1:8082**
+- **Порты** (простая схема: dev=3000/8000, test=3001/8001, etc)
+  - Frontend: localhost:5173 → 127.0.0.1:8083 → **127.0.0.1:3000**
+  - Backend: localhost:8000 → 127.0.0.1:8082 → **127.0.0.1:8000**
   - PostgreSQL: 5433 → **internal only**
   - Redis: 6378 → **internal only**
 
@@ -60,13 +60,19 @@
 ### NGINX Configuration
 
 **DEV (dev.dc.vasiliy-ivanov.ru):**
-- `/api/healthz` → 127.0.0.1:8082/health
-- `/api/*` → 127.0.0.1:8082/ (Backend API)
-- `/` → 127.0.0.1:8083 (Frontend)
+- `/api/healthz` → 127.0.0.1:8000/health
+- `/api/*` → 127.0.0.1:8000/ (Backend API)
+- `/` → 127.0.0.1:3000 (Frontend)
 
 **TEST (test.dc.vasiliy-ivanov.ru):**
-- `/api/*` → 127.0.0.1:8182/ (Backend API)
-- `/` → 127.0.0.1:8083 (Frontend) ⚠️ TODO: должно быть 8181
+- `/api/*` → 127.0.0.1:8001/ (Backend API)
+- `/` → 127.0.0.1:3001 (Frontend)
+
+**Port Schema (Simple):**
+- dev: Frontend=3000, API=8000
+- test: Frontend=3001, API=8001
+- staging: Frontend=3002, API=8002
+- prod: nginx reverse proxy (443/80)
 
 **Файлы:**
 - `infra/nginx/dev.conf`
@@ -127,10 +133,18 @@
 - dc-test-api (testing backend)
 - dc-prod-db (production database)
 
-### Port Allocation
-- **dev**: 808x (8082 API, 8083 admin)
-- **test**: 818x (8182 API, 8181 admin)
-- **prod**: 443/80 (nginx reverse proxy)
+### Port Allocation (Simple Schema)
+**Логика:** Стандартные порты с инкрементом для каждого окружения
+
+- **dev**: Frontend=3000, API=8000
+- **test**: Frontend=3001, API=8001
+- **staging**: Frontend=3002, API=8002
+- **prod**: nginx reverse proxy (443/80)
+
+**Преимущества:**
+- Легко запомнить (3000 - стандартный React/Node port)
+- Легко масштабировать (просто +1 для нового окружения)
+- Нет путаницы с шаблонами типа 808x/818x
 
 ---
 
