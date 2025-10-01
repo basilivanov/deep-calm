@@ -39,9 +39,9 @@ COPY ./app /app/app
 COPY ./alembic /app/alembic
 COPY ./alembic.ini /app/alembic.ini
 
-# Создаём пользователя с UID хоста (dc = 997)
-RUN useradd -m -u 997 dcuser && chown -R dcuser:dcuser /app
-USER dcuser
+# Для development запускаем от root (в production использовать dcuser)
+# RUN useradd -m -u 997 dcuser && chown -R dcuser:dcuser /app
+# USER dcuser
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
