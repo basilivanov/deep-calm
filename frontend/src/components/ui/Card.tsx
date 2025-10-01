@@ -8,7 +8,7 @@ interface CardProps {
 
 export function Card({ children, className }: CardProps) {
   return (
-    <div className={clsx('bg-white dark:bg-gray-800 rounded-lg shadow p-6', className)}>
+    <div className={clsx('bg-dc-bg-secondary rounded-lg shadow-sm border border-dc-primary/10 p-6', className)}>
       {children}
     </div>
   );
@@ -34,7 +34,7 @@ interface CardTitleProps {
 
 export function CardTitle({ children, className }: CardTitleProps) {
   return (
-    <h3 className={clsx('text-lg font-semibold text-gray-900 dark:text-white', className)}>
+    <h3 className={clsx('text-lg font-semibold text-dc-ink', className)}>
       {children}
     </h3>
   );

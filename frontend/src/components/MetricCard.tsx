@@ -16,22 +16,22 @@ export function MetricCard({ title, value, subtitle, icon, trend }: MetricCardPr
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+        <CardTitle className="text-sm font-medium text-dc-primary">
           {title}
         </CardTitle>
-        {icon && <div className="text-gray-400">{icon}</div>}
+        {icon && <div className="text-dc-accent">{icon}</div>}
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold text-gray-900 dark:text-white">
+        <div className="text-2xl font-bold text-dc-ink">
           {value}
         </div>
         {subtitle && (
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-xs text-dc-primary/60 mt-1">
             {subtitle}
           </p>
         )}
         {trend && (
-          <p className={`text-xs mt-1 ${trend.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+          <p className={`text-xs mt-1 ${trend.isPositive ? 'text-dc-success' : 'text-dc-error'}`}>
             {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
           </p>
         )}

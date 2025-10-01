@@ -2,14 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* DeepCalm Brand Colors */
 :root {
+  --dc-bg: #F7F5F2;
+  --dc-primary: #6B4E3D;
+  --dc-ink: #262626;
+  --dc-accent: #A67C52;
+  --dc-success: #10B981;
+  --dc-warning: #F59E0B;
+  --dc-error: #EF4444;
+
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color: var(--dc-ink);
+  background-color: var(--dc-bg);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;

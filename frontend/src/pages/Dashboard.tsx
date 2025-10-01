@@ -40,10 +40,10 @@ export function Dashboard() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-3xl font-bold text-dc-primary">
           Dashboard
         </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
+        <p className="text-dc-primary/70 mt-1">
           Обзор всех кампаний и метрик
         </p>
       </div>
@@ -95,7 +95,7 @@ export function Dashboard() {
             <CardTitle>CAC по дням (последние 30 дней)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64 flex items-center justify-center text-gray-400">
+            <div className="h-64 flex items-center justify-center text-dc-primary/40">
               График CAC (в разработке)
             </div>
           </CardContent>
@@ -107,7 +107,7 @@ export function Dashboard() {
             <CardTitle>Conversion Rate по дням</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64 flex items-center justify-center text-gray-400">
+            <div className="h-64 flex items-center justify-center text-dc-primary/40">
               График CR (в разработке)
             </div>
           </CardContent>
@@ -122,20 +122,20 @@ export function Dashboard() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Средний CAC</div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+              <div className="text-sm text-dc-primary/70">Средний CAC</div>
+              <div className="text-2xl font-bold text-dc-ink mt-1">
                 {summary.avg_cac_rub ? formatRub(summary.avg_cac_rub) : '—'}
               </div>
             </div>
             <div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Средний ROAS</div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+              <div className="text-sm text-dc-primary/70">Средний ROAS</div>
+              <div className="text-2xl font-bold text-dc-ink mt-1">
                 {summary.avg_roas ? summary.avg_roas.toFixed(2) : '—'}
               </div>
             </div>
             <div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Лучшая кампания</div>
-              <div className="text-lg font-semibold text-gray-900 dark:text-white mt-1">
+              <div className="text-sm text-dc-primary/70">Лучшая кампания</div>
+              <div className="text-lg font-semibold text-dc-ink mt-1">
                 {summary.top_performing_campaign
                   ? `${summary.top_performing_campaign.campaign_title} (ROAS: ${summary.top_performing_campaign.roas.toFixed(2)})`
                   : 'Нет данных'}

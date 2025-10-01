@@ -7,18 +7,24 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
-        },
+        // DeepCalm Brand Colors
+        'dc-bg': '#F7F5F2',        // Бежевый фон
+        'dc-primary': '#6B4E3D',   // Коричневый основной
+        'dc-ink': '#262626',       // Текст
+        'dc-accent': '#A67C52',    // Акцентный (кнопки)
+        'dc-success': '#10B981',   // Зелёный (успех)
+        'dc-warning': '#F59E0B',   // Жёлтый (предупреждение)
+        'dc-error': '#EF4444',     // Красный (ошибка)
+
+        // Дополнительные оттенки для UI
+        'dc-primary-light': '#8A6B5A',
+        'dc-primary-dark': '#4A3529',
+        'dc-accent-light': '#C9A07B',
+        'dc-bg-secondary': '#FFFFFF',
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
     },
   },
