@@ -1,0 +1,96 @@
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: deepcalm-db
+    environment:
+      POSTGRES_USER: dc
+      POSTGRES_PASSWORD: dcpass
+      POSTGRES_DB: deep_calm_dev
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dc"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: deepcalm-redis
+    ports:
+      - "6378:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Backend API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: deepcalm-api
+    environment:
+      # Database
+      DATABASE_URL: postgresql://dc:dcpass@db:5432/deep_calm_dev
+
+      # Redis
+      REDIS_URL: redis://redis:6379/0
+
+      # App settings
+      APP_ENV: development
+      APP_DEBUG: "true"
+      SECRET_KEY: dev-secret-key-change-in-production
+
+      # CORS
+      CORS_ORIGINS: http://localhost:3000,http://localhost:5173
+
+      # Logging
+      LOG_LEVEL: INFO
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      # Hot reload для development
+      - ./app:/app/app
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
+      - ./cli.py:/app/cli.py
+    command: >
+      sh -c "
+        echo 'Waiting for database...' &&
+        sleep 5 &&
+        echo 'Running migrations...' &&
+        alembic upgrade head &&
+        echo 'Running seed...' &&
+        python cli.py seed &&
+        echo 'Starting API server...' &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  default:
+    name: deepcalm-network

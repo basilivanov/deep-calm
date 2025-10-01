@@ -39,8 +39,8 @@ COPY ./app /app/app
 COPY ./alembic /app/alembic
 COPY ./alembic.ini /app/alembic.ini
 
-# Создаём непривилегированного пользователя
-RUN useradd -m -u 1000 dcuser && chown -R dcuser:dcuser /app
+# Создаём пользователя с UID хоста (dc = 997)
+RUN useradd -m -u 997 dcuser && chown -R dcuser:dcuser /app
 USER dcuser
 
 # Healthcheck
