@@ -15,7 +15,7 @@ redis==5.0.1
 hiredis==2.3.2
 
 # HTTP Client (для интеграций)
-httpx==0.26.0
+httpx==0.27.0
 aiohttp==3.9.3
 
 # OpenAI / LLM
