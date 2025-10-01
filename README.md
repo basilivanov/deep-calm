@@ -1,6 +1,6 @@
 # DeepCalm — Автопилот Performance-маркетинга
 
-**Status:** Phase 1 MVP — Backend реализован ✅
+**Status:** Phase 1 MVP — Backend + Frontend реализованы ✅
 
 Performance-маркетинг автопилот для массажного кабинета с AI-агентами, автоматизацией размещения рекламы и аналитикой эффективности кампаний.
 
@@ -17,12 +17,21 @@ Performance-маркетинг автопилот для массажного к
 - **Logging** — structlog с JSON-логами и PII masking
 - **Tests** — 27 интеграционных тестов (pytest)
 
+### ✅ Frontend (React + Vite)
+- **Dashboard** — метрики кампаний (CAC, ROAS, CR, бюджет)
+- **UI Kit** — Button, Card, MetricCard с DeepCalm брендбуком
+- **Design System** — фирменные цвета (#F7F5F2, #6B4E3D, #A67C52)
+- **Typography** — Inter (400, 600) из Google Fonts
+- **React Query** — кеширование и автообновление данных (30 сек)
+- **Recharts** — графики CAC и CR (в разработке)
+
 ### ✅ Инфраструктура (Docker)
-- **PostgreSQL 16** — база данных с автомиграциями
-- **Redis 7** — кеш-слой
-- **Backend API** — с hot-reload для разработки
-- **Healthchecks** — для всех сервисов
-- **Volumes** — для персистентности данных
+- **PostgreSQL 16** — база данных (контейнер: `dc-dev-db`, internal)
+- **Redis 7** — кеш-слой (контейнер: `dc-dev-redis`, internal)
+- **Backend API** — FastAPI (контейнер: `dc-dev-api`, порт 127.0.0.1:8082)
+- **Frontend (Admin)** — React+Vite (контейнер: `dc-dev-admin`, порт 127.0.0.1:8083)
+- **Hot-reload** — работает для разработки
+- **Volumes** — персистентные данные (pgdata, redisdata)
 
 ### ✅ Модели данных
 - `channels` — рекламные площадки (VK, Директ, Avito)
@@ -39,13 +48,13 @@ Performance-маркетинг автопилот для массажного к
 ### Требования
 - Docker и Docker Compose
 - Пользователь `dc` с доступом к Docker
-- Порты 8000, 5433, 6378 свободны
+- Порты **8083** (admin) и **8082** (API) свободны на 127.0.0.1
 
-### Запуск
+### Запуск (DEV окружение)
 
 ```bash
-# 1. Перейти в директорию проекта
-cd /opt/deep-calm
+# 1. Перейти в dev директорию
+cd /opt/deep-calm/dev
 
 # 2. Запустить все сервисы
 docker compose up -d
@@ -54,20 +63,21 @@ docker compose up -d
 docker compose ps
 
 # 4. Посмотреть логи
-docker compose logs -f api
+docker compose logs -f dc-api
 
-# 5. Открыть Swagger UI
-# http://localhost:8000/docs
+# 5. Открыть приложение
+# Frontend (Admin): http://127.0.0.1:8083
+# Backend API (Swagger): http://127.0.0.1:8082/docs
 ```
 
 ### Проверка работоспособности
 
 ```bash
 # Health check
-curl http://localhost:8000/health
+curl http://127.0.0.1:8082/health
 
 # Создать тестовую кампанию
-curl -X POST http://localhost:8000/api/v1/campaigns \
+curl -X POST http://127.0.0.1:8082/api/v1/campaigns \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Тестовая кампания",
@@ -80,10 +90,10 @@ curl -X POST http://localhost:8000/api/v1/campaigns \
   }'
 
 # Получить список кампаний
-curl http://localhost:8000/api/v1/campaigns
+curl http://127.0.0.1:8082/api/v1/campaigns
 
 # Dashboard аналитики
-curl http://localhost:8000/api/v1/analytics/dashboard
+curl http://127.0.0.1:8082/api/v1/analytics/dashboard
 ```
 
 ---
@@ -123,6 +133,26 @@ curl http://localhost:8000/api/v1/analytics/dashboard
 │       ├── vk_ads.py           # Mock для MVP
 │       ├── yandex_direct.py    # Mock для MVP
 │       └── avito.py            # Mock для MVP
+├── frontend/                    # Frontend код
+│   ├── src/
+│   │   ├── main.tsx            # React entry point
+│   │   ├── App.tsx             # Main app component
+│   │   ├── index.css           # Global styles (DeepCalm colors)
+│   │   ├── api/
+│   │   │   └── client.ts       # Axios API client
+│   │   ├── components/
+│   │   │   ├── ui/
+│   │   │   │   ├── Card.tsx    # Card component
+│   │   │   │   └── Button.tsx  # Button component
+│   │   │   └── MetricCard.tsx  # Metric display card
+│   │   └── pages/
+│   │       └── Dashboard.tsx   # Dashboard page
+│   ├── index.html              # HTML template (Inter font)
+│   ├── package.json            # Node dependencies
+│   ├── vite.config.ts          # Vite config
+│   ├── tailwind.config.js      # Tailwind (DeepCalm colors)
+│   ├── tsconfig.json           # TypeScript config
+│   └── Dockerfile              # Frontend образ
 ├── alembic/                     # Миграции БД
 │   └── versions/
 │       └── xxx_initial_schema.py
@@ -132,11 +162,17 @@ curl http://localhost:8000/api/v1/analytics/dashboard
 │       ├── test_campaigns_api.py     # 10 тестов
 │       ├── test_publishing_api.py    # 9 тестов
 │       └── test_analytics_api.py     # 8 тестов
-├── docker-compose.yml           # Docker setup
+├── cortex/                      # Документация
+│   ├── DEEP-CALM-MVP-BLUEPRINT.md
+│   ├── DEEP-CALM-ROADMAP.md
+│   ├── DEEP-CALM-INFRASTRUCTURE.md
+│   └── CHANGELOG.md            # История изменений
+├── docker-compose.yml           # Docker setup (4 сервиса)
 ├── Dockerfile                   # Backend образ
 ├── requirements.txt             # Python зависимости
 ├── alembic.ini                 # Alembic config
 ├── cli.py                      # CLI команды (seed)
+├── CLAUDE.md                   # Claude Code context
 └── README.md                   # Этот файл
 ```
 
@@ -147,68 +183,75 @@ curl http://localhost:8000/api/v1/analytics/dashboard
 ### Запуск тестов
 
 ```bash
-# Все тесты
-docker compose exec api pytest -v
+# Все тесты (из dev/)
+cd /opt/deep-calm/dev
+docker compose exec dc-api pytest -v
 
 # С покрытием
-docker compose exec api pytest --cov=app --cov-report=term-missing
+docker compose exec dc-api pytest --cov=app --cov-report=term-missing
 
 # Конкретный тест
-docker compose exec api pytest tests/integration/test_campaigns_api.py -v
+docker compose exec dc-api pytest tests/integration/test_campaigns_api.py -v
 ```
 
 ### Работа с миграциями
 
 ```bash
 # Создать новую миграцию
-docker compose exec api alembic revision --autogenerate -m "Add new table"
+docker compose exec dc-api alembic revision --autogenerate -m "Add new table"
 
 # Применить миграции
-docker compose exec api alembic upgrade head
+docker compose exec dc-api alembic upgrade head
 
 # Откатить последнюю миграцию
-docker compose exec api alembic downgrade -1
+docker compose exec dc-api alembic downgrade -1
 
 # История миграций
-docker compose exec api alembic history
+docker compose exec dc-api alembic history
 
 # Текущая версия
-docker compose exec api alembic current
+docker compose exec dc-api alembic current
 ```
 
 ### Seed данные
 
 ```bash
 # Загрузить seed данные (каналы)
-docker compose exec api python cli.py seed
+docker compose exec dc-api python cli.py seed
 ```
 
 ### Логи
 
 ```bash
-# Все сервисы
+# Все сервисы (из dev/)
+cd /opt/deep-calm/dev
 docker compose logs -f
 
 # Только API
-docker compose logs -f api
+docker compose logs -f dc-api
 
 # Только PostgreSQL
-docker compose logs -f db
+docker compose logs -f dc-db
+
+# Только Frontend
+docker compose logs -f dc-admin
 
 # Последние 100 строк
-docker compose logs --tail=100 api
+docker compose logs --tail=100 dc-api
 ```
 
 ### Пересборка образа
 
 ```bash
-# Пересобрать и перезапустить
-docker compose down
-docker compose build
-docker compose up -d
+# Пересобрать образы (из корня проекта)
+cd /opt/deep-calm
+docker build -t deep-calm-api .
+docker build -t deep-calm-frontend ./frontend
 
-# Или одной командой
-docker compose up -d --build
+# Перезапустить (из dev/)
+cd dev
+docker compose down
+docker compose up -d
 ```
 
 ---
@@ -263,8 +306,11 @@ docker compose up -d --build
 ### Подключение
 
 ```bash
-# Через psql
-psql -h localhost -p 5433 -U dc -d deep_calm_dev
+# Через Docker (exec в контейнер)
+docker exec -it dc-dev-db psql -U dc -d dc_dev
+
+# Или напрямую, если порт пробро шен (по умолчанию НЕТ)
+# psql -h localhost -p 5432 -U dc -d dc_dev
 
 # Пароль: dcpass
 ```
@@ -298,11 +344,12 @@ psql -h localhost -p 5433 -U dc -d deep_calm_dev
 
 **Запуск:**
 ```bash
-# Все тесты
-docker compose exec api pytest -v
+# Все тесты (из dev/)
+cd /opt/deep-calm/dev
+docker compose exec dc-api pytest -v
 
 # С отчетом о покрытии
-docker compose exec api pytest --cov=app --cov-report=html
+docker compose exec dc-api pytest --cov=app --cov-report=html
 
 # Открыть отчет (генерируется в htmlcov/)
 # Нужно скопировать из контейнера или запустить pytest на хосте
@@ -335,14 +382,10 @@ docker compose exec api pytest --cov=app --cov-report=html
 
 ## 🔐 Переменные окружения
 
-**docker-compose.yml содержит:**
-- `DATABASE_URL` — postgresql://dc:dcpass@db:5432/deep_calm_dev
-- `REDIS_URL` — redis://redis:6379/0
-- `APP_ENV` — development
-- `APP_DEBUG` — true
-- `SECRET_KEY` — dev-secret-key-change-in-production
-- `CORS_ORIGINS` — http://localhost:3000,http://localhost:5173
-- `LOG_LEVEL` — INFO
+**dev/docker-compose.yml содержит:**
+- `DC_ENV` — dev
+- `DC_DB_URL` — postgresql://dc:dcpass@dc-db:5432/dc_dev
+- `DC_REDIS_URL` — redis://dc-redis:6379/0
 
 **Для production нужно добавить:**
 - `OPENAI_API_KEY` — для генерации креативов (Phase 1.5)
@@ -356,53 +399,67 @@ docker compose exec api pytest --cov=app --cov-report=html
 
 ## 🐳 Docker
 
-### Сервисы
+### Сервисы (DEV окружение)
 
-**db (PostgreSQL 16)**
-- Image: postgres:16-alpine
-- Port: 5433:5432
-- Volume: postgres_data
-- Healthcheck: pg_isready
+**dc-dev-db (PostgreSQL 16)**
+- Container: `dc-dev-db`
+- Image: postgres:16
+- Port: internal only (внутри Docker сети)
+- Volume: ./pgdata
+- Database: dc_dev
+- User: dc / dcpass
 
-**redis (Redis 7)**
-- Image: redis:7-alpine
-- Port: 6378:6379
-- Volume: redis_data
-- Healthcheck: redis-cli ping
+**dc-dev-redis (Redis 7)**
+- Container: `dc-dev-redis`
+- Image: redis:7
+- Port: internal only
+- Volume: ./redisdata
+- Persistence: 60s/100 keys
 
-**api (Backend)**
-- Build: Dockerfile (multi-stage)
-- Port: 8000:8000
-- Depends on: db, redis (with healthchecks)
-- Command: migrations → seed → uvicorn --reload
-- Volumes: hot-reload для app/, alembic/
+**dc-dev-admin (Frontend)**
+- Container: `dc-dev-admin`
+- Image: deep-calm-frontend
+- Port: **127.0.0.1:8083**:3000
+- Environment: HOST=0.0.0.0
+- Depends on: dc-api
+
+**dc-dev-api (Backend)**
+- Container: `dc-dev-api`
+- Image: deep-calm-api
+- Port: **127.0.0.1:8082**:8000
+- Environment: DC_ENV=dev
+- Depends on: dc-db, dc-redis
+- Restart: unless-stopped
 
 ### Команды
 
 ```bash
-# Запуск
+# Запуск (из dev/)
+cd /opt/deep-calm/dev
 docker compose up -d
 
 # Остановка
 docker compose down
 
-# Остановка с удалением volumes
+# Остановка с удалением volumes (ВНИМАНИЕ: удалит БД!)
 docker compose down -v
-
-# Пересборка
-docker compose build
 
 # Статус
 docker compose ps
 
 # Логи
-docker compose logs -f
+docker compose logs -f dc-api
 
 # Shell в контейнере
-docker compose exec api bash
+docker exec -it dc-dev-api bash
 
 # Выполнить команду
-docker compose exec api python cli.py seed
+docker compose exec dc-api python cli.py seed
+
+# Пересборка образов (из корня)
+cd /opt/deep-calm
+docker build -t deep-calm-api .
+docker build -t deep-calm-frontend ./frontend
 ```
 
 ---
@@ -450,9 +507,11 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - [x] Creatives API (mock generation)
 - [x] Publishing API (mock integrations)
 - [x] Analytics API (CAC, ROAS, CR)
-- [x] Docker setup
+- [x] Docker setup (4 сервиса)
 - [x] Integration tests (27)
-- [ ] Frontend (React + Vite) — TODO
+- [x] Frontend (React + Vite + Tailwind)
+- [x] Dashboard UI с DeepCalm брендбуком
+- [x] React Query интеграция с Backend API
 
 ### 🔜 Phase 1.5 (Next)
 - [ ] AI Analyst Agent (GPT-4)

@@ -50,10 +50,10 @@
 - `/opt/deep-calm/IMPLEMENTATION-PLAN.md` - Day-by-day plan
 
 ### Key Configs
-- `docker-compose.dev.yml` - Development Docker setup
-- `.gitignore.template` - Comprehensive gitignore (224 lines)
+- `dev/docker-compose.yml` - Development Docker setup (РАБОЧИЙ)
+- `docker-compose.yml` - Устаревший, используется `dev/`
 - `requirements.txt` - Python dependencies (30+ packages)
-- `package.json` - React dependencies
+- `frontend/package.json` - React dependencies
 
 ---
 
@@ -62,29 +62,36 @@
 ### User: dc
 ```bash
 whoami  # dc
-cd /opt/deep-calm
+cd /opt/deep-calm/dev  # ⚠️ Работаем из dev/
 ```
 
 ### Docker Commands
 ```bash
-# Start all services
-docker compose -f docker-compose.dev.yml up -d
+# Start all services (из dev/)
+cd /opt/deep-calm/dev
+docker compose up -d
 
 # Logs
-docker compose -f docker-compose.dev.yml logs -f dc-api
+docker compose logs -f dc-api
 
 # Shell in container
-docker compose -f docker-compose.dev.yml exec dc-api bash
+docker exec -it dc-dev-api bash
 
 # Migrations
-docker compose -f docker-compose.dev.yml exec dc-api alembic upgrade head
+docker compose exec dc-api alembic upgrade head
 ```
 
-### Ports
-- Backend API: http://localhost:8084
-- Frontend: http://localhost:8083
-- PostgreSQL: localhost:5432 (dc/dcpass/deep_calm_dev)
-- Redis: localhost:6379
+### Ports (DEV)
+- Frontend (Admin): http://127.0.0.1:**8083**
+- Backend API: http://127.0.0.1:**8082**
+- PostgreSQL: internal only (dc-dev-db)
+- Redis: internal only (dc-dev-redis)
+
+### Container Names (стиль: dc-{env}-{service})
+- `dc-dev-admin` - Frontend
+- `dc-dev-api` - Backend API
+- `dc-dev-db` - PostgreSQL 16
+- `dc-dev-redis` - Redis 7
 
 ---
 
@@ -151,7 +158,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 - Coverage target: ≥70%
 - Types: Unit, Integration, Contract (schemathesis), DQ, E2E
-- Run: `docker compose -f docker-compose.dev.yml exec dc-api pytest --cov=app`
+- Run: `cd /opt/deep-calm/dev && docker compose exec dc-api pytest --cov=app`
 
 ---
 
@@ -163,31 +170,34 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - PII masking in logs (phones, emails)
 
 ### Database
-- PostgreSQL volumes: 999:999 ownership (Docker user)
-- Backup before migrations: `pg_dump > backups/backup_$(date +%Y%m%d).sql`
+- PostgreSQL: internal only (не пробрасывается наружу в dev)
+- DB Name: `dc_dev` (не deep_calm_dev!)
+- Backup: `docker exec dc-dev-db pg_dump -U dc dc_dev > backup.sql`
 
 ### Development
-- Hot-reload works for both backend and frontend
-- Changes in app/ → backend restarts automatically
-- Changes in frontend/src/ → HMR in browser
+- Hot-reload: НЕТ в dev (образы пересобираются)
+- Для hot-reload нужны volume mounts (не настроены в dev/docker-compose.yml)
+- Для изменений: пересобрать образ + restart container
 
 ---
 
 ## Current Task Status
 
-**Phase:** Pre-deployment (setting up environment)
+**Phase:** Phase 1 MVP Complete ✅
 
-**Last Actions:**
-1. Created comprehensive documentation
-2. Prepared Docker configs
-3. Created user setup guides
-4. Ready to run bootstrap script
+**Completed:**
+1. Backend API (FastAPI + PostgreSQL + Redis)
+2. Frontend (React + Vite + Tailwind + DeepCalm брендбук)
+3. Docker setup (4 контейнера: dc-dev-{admin,api,db,redis})
+4. 27 integration tests
+5. Documentation (README, CLAUDE.md, cortex/)
 
-**Next Actions:**
-1. Run bootstrap: `sudo bash deep-calm-bootstrap.sh`
-2. Setup dc user: shell, password, groups
-3. Initialize git repository
-4. Start Day 1: Backend Skeleton
+**Current:**
+- Обновление документации с актуальными портами и названиями контейнеров
+- Фиксация стиля именования: `dc-{env}-{service}`
+
+**Next:**
+- Phase 1.5: AI Analyst Agent
 
 ---
 
@@ -222,16 +232,26 @@ claude --resume
 ```bash
 # User
 whoami                    # should be: dc
-groups                    # should include: dcops, docker
+groups                    # should include: docker
 
 # Project
-cd /opt/deep-calm
-ls -la                    # check ownership (dc:dcops)
+cd /opt/deep-calm/dev    # ⚠️ dev окружение
 
-# Docker
-docker compose -f docker-compose.dev.yml ps     # status
-docker compose -f docker-compose.dev.yml up -d  # start
-docker compose -f docker-compose.dev.yml logs -f dc-api  # logs
+# Docker (из dev/)
+docker compose ps                    # status
+docker compose up -d                 # start
+docker compose logs -f dc-api        # logs API
+docker compose logs -f dc-admin      # logs Frontend
+docker compose exec dc-api bash      # shell в API
+docker exec -it dc-dev-db psql -U dc dc_dev  # PostgreSQL
+
+# Containers
+docker ps  # показывает: dc-dev-admin, dc-dev-api, dc-dev-db, dc-dev-redis
+
+# Образы (пересборка из корня)
+cd /opt/deep-calm
+docker build -t deep-calm-api .
+docker build -t deep-calm-frontend ./frontend
 
 # Git
 git status
@@ -239,12 +259,16 @@ git log --oneline
 
 # Documentation
 cat cortex/DEEP-CALM-MVP-BLUEPRINT.md  # main spec
-cat IMPLEMENTATION-PLAN.md              # day-by-day plan
+cat README.md                           # quick start
 ```
 
 ---
 
-**Last Session:** Initial planning and setup
-**Ready for:** Bootstrap deployment and Phase 1 development
+**URLs (DEV):**
+- Frontend: http://127.0.0.1:8083
+- Backend API: http://127.0.0.1:8082/docs
+
+**Last Session:** Phase 1 MVP completed + documentation update
+**Status:** Production-ready MVP ✅
 
 *This file is automatically read by Claude Code at session start*
