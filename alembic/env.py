@@ -9,8 +9,14 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 # Импортируем Base и все модели
-from app.db.base import Base
-from app.models import *  # noqa
+from app.models import Base  # noqa
+# Импортируем все модели для автогенерации
+from app.models.channel import Channel  # noqa
+from app.models.campaign import Campaign  # noqa
+from app.models.creative import Creative  # noqa
+from app.models.placement import Placement  # noqa
+from app.models.lead import Lead  # noqa
+from app.models.conversion import Conversion  # noqa
 
 # Конфиг Alembic
 config = context.config
