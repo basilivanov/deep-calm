@@ -164,12 +164,9 @@ async def root():
 
 
 # API v1 routers
-from app.api.v1 import campaigns, creatives, publishing
+from app.api.v1 import analytics, campaigns, creatives, publishing
 
 app.include_router(campaigns.router, prefix="/api/v1", tags=["campaigns"])
 app.include_router(creatives.router, prefix="/api/v1", tags=["creatives"])
 app.include_router(publishing.router, prefix="/api/v1", tags=["publishing"])
-
-# TODO: Добавить остальные роутеры
-# from app.api.v1 import analytics
-# app.include_router(analytics.router, prefix="/api/v1", tags=["analytics"])
+app.include_router(analytics.router, prefix="/api/v1", tags=["analytics"])
