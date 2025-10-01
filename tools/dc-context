@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Генерация TASKS/<id>/CONTEXT.md: собираем ключевые документы Cortex для агента
+set -euo pipefail
+ID="${1:-}"
+[[ -z "$ID" ]] && { echo "usage: dc-context <task_id>"; exit 2; }
+BASE="/opt/deep-calm"
+T="${BASE}/TASKS/${ID}"
+[[ -d "$T" ]] || { echo "нет каталога ${T}"; exit 1; }
+OUT="${T}/CONTEXT.md"
+{
+  echo "# Context Pack for TASK ${ID}"
+  echo ""
+  echo "## STANDARDS.yml"
+  sed -n '1,200p' "${BASE}/cortex/STANDARDS.yml"
+  echo ""
+  echo "## METRICS_DICTIONARY.md"
+  sed -n '1,200p' "${BASE}/cortex/METRICS_DICTIONARY.md"
+  echo ""
+  echo "## OpenAPI (фрагмент)"
+  sed -n '1,120p' "${BASE}/cortex/APIs/openapi.yaml"
+  echo ""
+  echo "## EVENTS schemas (список)"
+  ls -1 "${BASE}/cortex/EVENTS"
+  echo ""
+  echo "## Brandbook/Invariants (фрагмент)"
+  sed -n '1,160p' "${BASE}/cortex/brandbook/invariants_v1.md"
+  echo ""
+  echo "## TESTPLAN.md"
+  sed -n '1,160p' "${BASE}/cortex/TESTPLAN.md"
+} > "${OUT}"
+echo "Контекст сгенерирован: ${OUT}"

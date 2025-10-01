@@ -1,0 +1,22 @@
+openapi: 3.0.3
+info: { title: DeepCalm API, version: "0.1" }
+paths:
+  /healthz:
+    get:
+      summary: Liveness
+      responses: { '200': { description: ok, content: { text/plain: { schema: { type: string, example: ok }}}}}
+  /analytics/kpi:
+    get: { summary: KPI summary, responses: { '200': { description: JSON } } }
+  /analytics/ttp:
+    get:
+      summary: Cohort TTP
+      parameters: [ { in: query, name: range, schema: { type: string, example: "30d" } } ]
+      responses: { '200': { description: JSON } }
+  /publishing/ads:
+    post: { summary: Create ad (VK/Direct), responses: { '202': { description: enqueued } } }
+  /bots/slots:
+    get: { summary: Get free slots (Yclients), responses: { '200': { description: JSON } } }
+  /ingest/yc/webhook:
+    post: { summary: Ingest Yclients, responses: { '202': { description: ok } } }
+  /aegis/alerts:
+    get: { summary: Aegis alerts feed, responses: { '200': { description: JSON } } }

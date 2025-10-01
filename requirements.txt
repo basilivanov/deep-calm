@@ -1,0 +1,70 @@
+# Core Framework
+fastapi==0.110.0
+uvicorn[standard]==0.27.1
+pydantic==2.6.1
+pydantic-settings==2.1.0
+
+# Database
+sqlalchemy==2.0.27
+alembic==1.13.1
+psycopg2-binary==2.9.9
+asyncpg==0.29.0
+
+# Redis
+redis==5.0.1
+hiredis==2.3.2
+
+# HTTP Client (для интеграций)
+httpx==0.26.0
+aiohttp==3.9.3
+
+# OpenAI / LLM
+openai==1.12.0
+anthropic==0.18.1
+
+# Logging
+structlog==24.1.0
+python-json-logger==2.0.7
+
+# Background Jobs
+apscheduler==3.10.4
+celery[redis]==5.3.6
+
+# Testing
+pytest==8.0.1
+pytest-asyncio==0.23.5
+pytest-cov==4.1.0
+faker==24.0.0
+
+# Auth & Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.9
+
+# Utils
+python-dotenv==1.0.1
+click==8.1.7
+pyyaml==6.0.1
+orjson==3.9.15
+
+# Monitoring
+prometheus-client==0.20.0
+
+# Image Processing (Фаза 3)
+pillow==10.2.0
+google-cloud-vision==3.7.0
+
+# Excel/CSV
+openpyxl==3.1.2
+pandas==2.2.0
+
+# Telegram Bot
+python-telegram-bot==21.0.1
+
+# VK API
+vk-api==11.9.9
+
+# Development
+black==24.2.0
+ruff==0.2.2
+mypy==1.8.0

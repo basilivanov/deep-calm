@@ -1,0 +1,35 @@
+# DeepCalm — STANDARDS (MANDATORY)
+naming:
+  product: deep-calm
+  acronym: DC
+  cli: dc
+  services: [dc-api, dc-admin, dc-db, dc-redis]
+  env_prefix: DC_
+environments:
+  domains: { dev: dev.dc.vasiliy-ivanov.ru, test: test.dc.vasiliy-ivanov.ru }
+  db: { engine: postgres16 }
+logging:
+  json: true
+  fields: [ts, level, app, svc, env, req_id, route, status, msg]
+  pii_mask: true
+metrics:
+  prometheus: true
+  labels: [env, svc, route, status, channel, campaign, sku]
+  latencies: [p50, p95, p99]
+testing:
+  tdd: required
+  contract: openapi + schemathesis
+  dq: nightly
+  coverage: { core: 0.85, rest: 0.75 }
+security:
+  secrets: env_only
+  basic_auth_test: true
+  gitleaks: required
+dq:
+  invariants:
+    - "no future dates in marts"
+    - "no duplicate contacts by phone"
+    - "utm not null for paid leads"
+publishing:
+  exclude_sku: ["TANTRA-120","YONI-240"]
+  avito_feed_exclude: ["TANTRA-120","YONI-240"]

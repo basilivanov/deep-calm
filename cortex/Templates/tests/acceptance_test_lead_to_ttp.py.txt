@@ -1,0 +1,4 @@
+# Acceptance (конспект для агента)
+# Given: first_touch (UTM), затем booking.created, затем payment.captured
+# When: ночная витрина считает mart_cohort_ttp
+# Then: Conv_D7>=1 в когорте месяца; median_ttp ∈ [0;30]; payback_D рассчитан

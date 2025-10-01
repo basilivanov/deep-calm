@@ -1,0 +1,1 @@
+schemathesis run http://localhost:8084/openapi.json --checks all

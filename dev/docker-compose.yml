@@ -1,0 +1,29 @@
+name: dc_dev
+services:
+  dc-db:
+    image: postgres:16
+    container_name: dc_dev-db
+    environment: { POSTGRES_DB: dc_dev, POSTGRES_USER: dc, POSTGRES_PASSWORD: dcpass }
+    volumes: [ "./pgdata:/var/lib/postgresql/data" ]
+    ports: [ "127.0.0.1:5432:5432" ]
+    restart: unless-stopped
+    healthcheck: { test: ["CMD-SHELL","pg_isready -U dc -d dc_dev || exit 1"], interval: 10s, timeout: 5s, retries: 10 }
+  dc-redis:
+    image: redis:7
+    container_name: dc_dev-redis
+    command: ["redis-server","--save","60","100","--loglevel","warning"]
+    volumes: [ "./redisdata:/data" ]
+    ports: [ "127.0.0.1:6379:6379" ]
+    restart: unless-stopped
+  dc-admin:
+    image: nginx:alpine
+    container_name: dc_dev-admin
+    volumes: [ "./admin/html:/usr/share/nginx/html:ro" ]
+    ports: [ "127.0.0.1:8083:80" ]
+    restart: unless-stopped
+  dc-api:
+    image: alpine:3.20
+    container_name: dc_dev-api
+    command: ["/bin/sh","-lc","while true; do ( printf 'HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nok\n' | nc -lp 8080 -k ); done"]
+    ports: [ "127.0.0.1:8084:8080" ]
+    restart: unless-stopped

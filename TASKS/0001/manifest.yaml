@@ -1,0 +1,14 @@
+id: 0001
+title: "Сквозной расчёт TTP (Landing→Purchase) и Cohorts"
+inputs:
+  - cortex/APIs/openapi.yaml
+  - cortex/EVENTS/booking.created.schema.json
+  - cortex/METRICS_DICTIONARY.md
+acceptance:
+  - "Given лид с UTM; When создан booking и captured payment; Then TTP_days >=0"
+  - "Given когорта за месяц; Then Conv_D7/30 рассчитаны"
+tests_required:
+  - acceptance
+  - unit
+  - contract
+  - dq

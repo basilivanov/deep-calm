@@ -1,0 +1,4 @@
+{ "$id":"https://deep-calm/events/booking.created.schema.json", "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "type":"object","required":["id","contact","sku","starts_at","source"],
+  "properties":{"id":{"type":"string"},"contact":{"type":"object","required":["phone"],"properties":{"phone":{"type":"string"}}},
+  "sku":{"type":"string"},"starts_at":{"type":"string","format":"date-time"},"source":{"type":"string"},"utm":{"type":"object"},"note":{"type":"string"}}}

@@ -1,0 +1,3 @@
+targets:
+  drr_max: 0.20
+  cpa_rub: { default: 600, vk: 700, direct: 800 }

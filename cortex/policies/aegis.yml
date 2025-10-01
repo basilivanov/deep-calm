@@ -1,0 +1,16 @@
+rules:
+  - when: ingest_lag_minutes > 60
+    do: [retry_sync: {connector: yclients}]
+    sev: 2
+  - when: api_5xx_rate_5m > 0.02
+    do: [pause: {what: [publishing,bidder], minutes: 30}]
+    sev: 2
+  - when: dq.mart_rowcount_delta not_in [-0.2, 2.0]
+    do: [recompute_mart: {range: "7d"}]
+    sev: 2
+  - when: disk_free_pct < 15
+    do: [alert]
+    sev: 2
+  - when: backup_age_hours > 24
+    do: [alert]
+    sev: 1

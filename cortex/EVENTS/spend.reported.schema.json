@@ -1,0 +1,3 @@
+{ "$id":"https://deep-calm/events/spend.reported.schema.json", "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "type":"object","required":["channel","campaign","date","spend"],
+  "properties":{"channel":{"type":"string"},"campaign":{"type":"string"},"date":{"type":"string","format":"date"},"spend":{"type":"number","minimum":0}}}

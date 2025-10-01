@@ -1,0 +1,3 @@
+{ "$id":"https://deep-calm/events/payment.captured.schema.json", "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "type":"object","required":["booking_id","amount","currency","paid_at"],
+  "properties":{"booking_id":{"type":"string"},"amount":{"type":"number","minimum":0},"currency":{"type":"string","enum":["RUB"]},"paid_at":{"type":"string","format":"date-time"}}}

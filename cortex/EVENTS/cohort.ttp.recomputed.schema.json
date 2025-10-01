@@ -1,0 +1,5 @@
+{ "$id":"https://deep-calm/events/cohort.ttp.recomputed.schema.json", "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "type":"object","required":["cohort_month","metrics","generated_at"],
+  "properties":{"cohort_month":{"type":"string","pattern":"^\\d{4}-\\d{2}$"},
+    "metrics":{"type":"object","properties":{"median_ttp":{"type":"number"},"conv_d7":{"type":"number"},"conv_d30":{"type":"number"}}},
+    "generated_at":{"type":"string","format":"date-time"}}}
