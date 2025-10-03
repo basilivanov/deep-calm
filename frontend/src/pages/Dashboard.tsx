@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Users, DollarSign, Target } from 'lucide-react';
-import { analyticsApi, DashboardSummary } from '../api/client';
+import type { DashboardSummary } from '../api/client';
+import { analyticsApi } from '../api/client';
 import { MetricCard } from '../components/MetricCard';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 
