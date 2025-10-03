@@ -340,37 +340,28 @@ async def create_campaign(title: str, budget: float, creative: dict) -> dict:
 ```
 
 ### Яндекс.Директ API v5
-**Статус:** Полная документация доступна на `yandex.ru/dev/direct`
+**Статус:** Интеграция активна. Реализован `YandexDirectClient`, работающий в двух режимах:
+mock (без токенов) и real (sandbox/prod). Документация API — `https://yandex.ru/dev/direct`.
 
-**Основные методы:**
-- `campaigns.add` — создание кампании
-- `adgroups.add` — создание группы объявлений
-- `ads.add` — добавление объявлений
-- `campaigns.update` — изменение бюджета/статуса
+**Методы:**
+- `campaigns.add` — создаём кампанию (DailyBudget, TextCampaign)
+- `campaigns.suspend` / `campaigns.resume` — управление статусом
+- Любые дополнительные запросы выполняются через `_request(service, method, params)`
 
-**OAuth:** через `yandex.ru/dev/oauth`
-
-**Для MVP:** используем httpx для REST-запросов.
+**OAuth:** получить токен на `https://oauth.yandex.ru` (для sandbox нужен отдельный логин).
 
 ```python
-# app/integrations/yandex_direct.py
-async def create_campaign(token: str, title: str, budget: float) -> dict:
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(
-            "https://api.direct.yandex.com/json/v5/campaigns",
-            headers={"Authorization": f"Bearer {token}"},
-            json={
-                "method": "add",
-                "params": {
-                    "Campaigns": [{
-                        "Name": title,
-                        "StartDate": date.today().isoformat(),
-                        "TextCampaign": {"BiddingStrategy": {"Search": {"BiddingStrategyType": "HIGHEST_POSITION"}}}
-                    }]
-                }
-            }
-        )
-        return resp.json()
+from app.integrations.yandex_direct import YandexDirectClient
+
+client = YandexDirectClient(
+    token=settings.yandex_direct_token,
+    login=settings.yandex_direct_login,
+    sandbox=settings.is_dev or settings.is_test,
+)
+
+campaign_id = client.create_campaign(title="DeepCalm", body="", image_url="", budget_rub=5000)
+client.pause_campaign(campaign_id)
+client.resume_campaign(campaign_id)
 ```
 
 ### Avito Автозагрузка (XML API)

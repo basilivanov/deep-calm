@@ -8,6 +8,7 @@ from uuid import UUID
 import structlog
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.integrations.avito import AvitoClient
 from app.integrations.vk_ads import VKAdsClient
 from app.integrations.yandex_direct import YandexDirectClient
@@ -24,7 +25,11 @@ class PublishingService:
     def __init__(self, db: Session):
         self.db = db
         self.vk_client = VKAdsClient()
-        self.direct_client = YandexDirectClient()
+        self.direct_client = YandexDirectClient(
+            token=settings.yandex_direct_token or None,
+            login=settings.yandex_direct_login or None,
+            sandbox=not settings.is_prod,
+        )
         self.avito_client = AvitoClient()
 
     def publish_campaign(

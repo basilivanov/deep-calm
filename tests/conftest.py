@@ -4,11 +4,15 @@ DeepCalm — Test Configuration
 Фикстуры для pytest.
 Следует cortex/DEEP-CALM-INFRASTRUCTURE.md (Testing)
 """
+import os
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from typing import Generator
+
+if os.getenv("PYTEST_SKIP_DB_FIXTURES") == "1":
+    pytest.skip("Skipping DB fixtures for lightweight unit tests", allow_module_level=True)
 
 from app.main import app
 from app.core.db import Base, get_db
