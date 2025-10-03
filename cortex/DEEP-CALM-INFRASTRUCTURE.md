@@ -1,5 +1,35 @@
 # DeepCalm — Инфраструктура (Логи, Тесты, Автодокументирование, Сквозная аналитика)
 
+## 0. Dev/Test Hardening (Phase 1.75)
+
+**Цель:** сделать DEV/TEST безопасными для работы LLM‑агентов и сократить цикл «исправил → посмотрел».
+
+### 0.1 Compose & сервисы
+- Единый `dev/docker-compose.yml` с проектом `dcdev` и контейнерами `dc-dev-db`, `dc-dev-redis`, `dc-dev-api`, `dc-dev-admin`.
+- Только готовые образы (`deep-calm-api`, `deep-calm-frontend`), никаких bind‑mount исходников.
+- Порты: API `127.0.0.1:8082 → 8000`, фронт `127.0.0.1:8083 → 3000`.
+- Базовая схема для всех окружений: dev=3000/8000, test=3001/8001, staging=3002/8002, prod=nginx (443/80).
+
+### 0.2 Nginx и домены
+- `dev.dc.vasiliy-ivanov.ru` и `test.dc.vasiliy-ivanov.ru` проксируют `/api/` и `/api/healthz` на соответствующие порты.
+- Wildcard `pr-*.dev.dc.vasiliy-ivanov.ru` отдаёт статику из `/var/www/dc/previews/<PR>/`.
+- Maintenance стоп‑кран: файл `/etc/nginx/maintenance/{dev|test}.enabled` → ответ 503, кроме `/api/healthz`.
+
+### 0.3 CI/CD
+- PR‑pipeline: lint/test FE, pytest BE, генерация `openapi.json`, `openapi-diff`, публикация превью, комментарий со ссылкой.
+- Экспорт схемы делается через `python scripts/export_openapi.py` (файл сохраняется в `cortex/APIs/openapi.json`).
+- Fast‑path для фронтовых правок (`frontend/**` + `openapi-diff == 0`): деплой только фронта на DEV без миграций.
+- `deploy-dev` и `deploy-test` запускают `alembic upgrade head`, уважают `DEPLOY_ENABLED`, перед TEST‑миграциями делается dump БД.
+- Очистка превью: `scripts/cleanup_previews.sh` (по расписанию на хосте) удаляет каталоги старше 14 дней.
+
+### 0.4 Стоп‑краны и контракт
+- Переменная `DC_FREEZE=1` (или ключ в Redis) переводит API в read‑only.
+- Проверка `DEPLOY_ENABLED` блокирует все деплой‑jobs.
+- FE↔BE контракт: `openapi.json` публикуется в Cortex, typed‑клиент генерится автоматически; расхождение схем → падение pipeline.
+- Автоматический cleanup превью и эпемерных окружений после merge/close PR.
+
+---
+
 ## 1. Система логирования (Production-ready)
 
 ### 1.1. Формат логов (JSON, structlog)

@@ -156,6 +156,26 @@ CREATE TABLE analyst_reports (
 
 ---
 
+## Фаза 1.75: Dev/Test Hardening & Preview Platform
+**Цель:** Сделать DEV/TEST безопасными для работы флеш‑моделей и ускорить цикл «исправил → посмотрел».
+**Сроки:** 1 неделя после завершения фазы 1.5
+**Статус:** Запланировано
+
+### Инициативы
+- Стандартизированный `dev/docker-compose.yml`: сервисы `dc-dev-*`, только готовые образы, маппинг портов `127.0.0.1:8082→8000` и `127.0.0.1:8083→3000`.
+- Nginx‑конфиги для `dev.dc.vasiliy-ivanov.ru`, `test.dc.vasiliy-ivanov.ru` и wildcard `pr-*.dev…`, плюс health‑алиас `/api/healthz` и maintenance стоп‑кран.
+- Полный PR‑pipeline: lint/test FE, pytest BE, генерация `openapi.json`, `openapi-diff`, публикация превью в `/var/www/dc/previews/pr-<id>/`, авто‑комментарий с ссылкой.
+- Fast‑path для «FE only»: path‑фильтры + проверка `openapi-diff == 0`, деплой только фронта на DEV без миграций.
+- Pipelines `deploy-dev` и `deploy-test` с автозапуском `alembic upgrade head`, контролем `DEPLOY_ENABLED` и снапшотом БД перед миграциями TEST.
+- Backend стоп‑кран записи (`DC_FREEZE`) и блокировка опасных запросов, контракт FE↔BE с typed‑клиентом и автоматический cleanup превью/эпемерных стеков после merge/close PR.
+
+### Критерии готовности
+- DEV‑compose и Nginx обновлены, `curl https://dev.dc.…/api/healthz` возвращает 200.
+- Каждый PR публикует превью на `https://pr-<id>.dev.dc.vasiliy-ivanov.ru` и проходит `openapi-diff`.
+- `deploy-dev` и `deploy-test` автоматически применяют миграции и уважают стоп‑флаги, `DC_FREEZE` переводит API в read‑only.
+
+---
+
 ## Фаза 2: AI Assistant & Omnichannel Inbox
 **Цель:** Автоматизировать общение с клиентами через боты + fallback на владельца
 **Сроки:** 3-4 недели после Фазы 1

@@ -66,18 +66,18 @@ docker compose ps
 docker compose logs -f dc-api
 
 # 5. Открыть приложение
-# Frontend (Admin): http://127.0.0.1:3000
-# Backend API (Swagger): http://127.0.0.1:8000/docs
+# Frontend (Admin): http://127.0.0.1:8083
+# Backend API (Swagger): http://127.0.0.1:8082/docs
 ```
 
 ### Проверка работоспособности
 
 ```bash
 # Health check
-curl http://127.0.0.1:8000/health
+curl http://127.0.0.1:8082/health
 
 # Создать тестовую кампанию
-curl -X POST http://127.0.0.1:8000/api/v1/campaigns \
+curl -X POST http://127.0.0.1:8082/api/v1/campaigns \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Тестовая кампания",
@@ -90,10 +90,10 @@ curl -X POST http://127.0.0.1:8000/api/v1/campaigns \
   }'
 
 # Получить список кампаний
-curl http://127.0.0.1:8000/api/v1/campaigns
+curl http://127.0.0.1:8082/api/v1/campaigns
 
 # Dashboard аналитики
-curl http://127.0.0.1:8000/api/v1/analytics/dashboard
+curl http://127.0.0.1:8082/api/v1/analytics/dashboard
 ```
 
 ---
@@ -419,17 +419,26 @@ docker compose exec dc-api pytest --cov=app --cov-report=html
 **dc-dev-admin (Frontend)**
 - Container: `dc-dev-admin`
 - Image: deep-calm-frontend
-- Port: **127.0.0.1:3000**:3000
-- Environment: HOST=0.0.0.0
+- Port: **127.0.0.1:8083**:3000
+- Environment: VITE_API_URL=http://dc-dev-api:8000
 - Depends on: dc-api
 
 **dc-dev-api (Backend)**
 - Container: `dc-dev-api`
 - Image: deep-calm-api
-- Port: **127.0.0.1:8000**:8000
+- Port: **127.0.0.1:8082**:8000
 - Environment: DC_ENV=dev
 - Depends on: dc-db, dc-redis
 - Restart: unless-stopped
+
+### Порты по окружениям
+
+| Окружение | Frontend (в контейнере) | Backend API (в контейнере) | Примечание |
+|-----------|-------------------------|-----------------------------|------------|
+| dev       | 3000                    | 8000                        | Проброс на хост: `127.0.0.1:8083→3000`, `127.0.0.1:8082→8000` |
+| test      | 3001                    | 8001                        | +1 к dev; пример: `127.0.0.1:8181→3001`, `127.0.0.1:8182→8001` |
+| staging   | 3002                    | 8002                        | +2 к dev |
+| prod      | nginx                   | nginx                       | Внешний доступ через 443/80 |
 
 ### Команды
 
@@ -518,6 +527,11 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - [ ] Settings управление
 - [ ] Weekly reports
 - [ ] Chat interface для аналитика
+
+### 🔜 Phase 1.75 (Planned)
+- [ ] Dev/Test hardening: `dc-dev-*` compose, Nginx, stop-кран maintenance, порты `8082/8083↔8000/3000`
+- [ ] PR-пайплайн: lint/test, `openapi-diff`, автоматическое превью `pr-<id>.dev.dc...`
+- [ ] Авто-миграции (`alembic upgrade head`), стоп-флаги `DEPLOY_ENABLED`/`DC_FREEZE`, cleanup превью
 
 ### 📅 Phase 2 (Future)
 - [ ] Telegram bot для клиентов

@@ -1,0 +1,3489 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "DeepCalm API",
+    "description": "Performance-маркетинг автопилот для массажного кабинета",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Health check endpoint.\n\nReturns:\n    Статус сервиса и версия\n\nExamples:\n    >>> curl http://localhost:8000/health\n    >>> {\"status\": \"ok\", \"service\": \"dc-api\", \"version\": \"0.1.0\"}",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "summary": "Root",
+        "description": "Root endpoint.\n\nReturns:\n    Приветственное сообщение",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/campaigns": {
+      "get": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Get Campaigns",
+        "description": "Получить список кампаний с пагинацией.\n\nArgs:\n    page: Номер страницы (начиная с 1)\n    page_size: Количество элементов на странице (1-100)\n    status: Фильтр по статусу (draft|active|paused|stopped)\n    db: Database session\n\nReturns:\n    CampaignListResponse с пагинацией\n\nExamples:\n    >>> GET /api/v1/campaigns?page=1&page_size=20&status=active",
+        "operationId": "get_campaigns_api_v1_campaigns_get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Номер страницы",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Номер страницы"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Размер страницы",
+              "default": 20,
+              "title": "Page Size"
+            },
+            "description": "Размер страницы"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Фильтр по статусу",
+              "title": "Status"
+            },
+            "description": "Фильтр по статусу"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampaignListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Create Campaign",
+        "description": "Создать новую кампанию.\n\nArgs:\n    campaign: Данные кампании (CampaignCreate)\n    db: Database session\n\nReturns:\n    Созданная кампания (CampaignResponse)\n\nRaises:\n    HTTPException: 400 если валидация не прошла\n\nExamples:\n    >>> POST /api/v1/campaigns\n    >>> {\n    >>>   \"title\": \"Запуск сентябрь — Релакс\",\n    >>>   \"sku\": \"RELAX-60\",\n    >>>   \"budget_rub\": 15000,\n    >>>   \"channels\": [\"vk\", \"direct\"]\n    >>> }",
+        "operationId": "create_campaign_api_v1_campaigns_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CampaignCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampaignResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/campaigns/{campaign_id}": {
+      "get": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Get Campaign",
+        "description": "Получить кампанию по ID.\n\nArgs:\n    campaign_id: UUID кампании\n    db: Database session\n\nReturns:\n    CampaignResponse\n\nRaises:\n    HTTPException: 404 если кампания не найдена\n\nExamples:\n    >>> GET /api/v1/campaigns/550e8400-e29b-41d4-a716-446655440000",
+        "operationId": "get_campaign_api_v1_campaigns__campaign_id__get",
+        "parameters": [
+          {
+            "name": "campaign_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Campaign Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampaignResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Update Campaign",
+        "description": "Обновить кампанию (частичное обновление).\n\nArgs:\n    campaign_id: UUID кампании\n    campaign_update: Обновляемые поля\n    db: Database session\n\nReturns:\n    Обновлённая кампания (CampaignResponse)\n\nRaises:\n    HTTPException: 404 если кампания не найдена\n\nExamples:\n    >>> PATCH /api/v1/campaigns/550e8400-e29b-41d4-a716-446655440000\n    >>> {\n    >>>   \"status\": \"active\",\n    >>>   \"budget_rub\": 20000\n    >>> }",
+        "operationId": "update_campaign_api_v1_campaigns__campaign_id__patch",
+        "parameters": [
+          {
+            "name": "campaign_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Campaign Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CampaignUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampaignResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Delete Campaign",
+        "description": "Удалить кампанию.\n\nArgs:\n    campaign_id: UUID кампании\n    db: Database session\n\nReturns:\n    204 No Content\n\nRaises:\n    HTTPException: 404 если кампания не найдена\n\nExamples:\n    >>> DELETE /api/v1/campaigns/550e8400-e29b-41d4-a716-446655440000",
+        "operationId": "delete_campaign_api_v1_campaigns__campaign_id__delete",
+        "parameters": [
+          {
+            "name": "campaign_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Campaign Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/creatives": {
+      "get": {
+        "tags": [
+          "creatives"
+        ],
+        "summary": "Get Creatives",
+        "description": "Получить список креативов.\n\nArgs:\n    campaign_id: Фильтр по ID кампании (опционально)\n    db: Database session\n\nReturns:\n    CreativeListResponse",
+        "operationId": "get_creatives_api_v1_creatives_get",
+        "parameters": [
+          {
+            "name": "campaign_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Фильтр по кампании",
+              "title": "Campaign Id"
+            },
+            "description": "Фильтр по кампании"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreativeListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "creatives"
+        ],
+        "summary": "Create Creative",
+        "description": "Создать креатив вручную.\n\nArgs:\n    creative: Данные креатива\n    db: Database session\n\nReturns:\n    CreativeResponse\n\nRaises:\n    HTTPException: 404 если кампания не найдена",
+        "operationId": "create_creative_api_v1_creatives_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreativeCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreativeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/creatives/generate": {
+      "post": {
+        "tags": [
+          "creatives"
+        ],
+        "summary": "Generate Creatives",
+        "description": "Сгенерировать креативы через LLM (mock для MVP).\n\nArgs:\n    request: Параметры генерации\n    db: Database session\n\nReturns:\n    Список созданных креативов\n\nRaises:\n    HTTPException: 404 если кампания не найдена\n\nExamples:\n    >>> POST /api/v1/creatives/generate\n    >>> {\n    >>>   \"campaign_id\": \"550e8400-e29b-41d4-a716-446655440001\",\n    >>>   \"count\": 3\n    >>> }",
+        "operationId": "generate_creatives_api_v1_creatives_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreativeGenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CreativeResponse"
+                  },
+                  "type": "array",
+                  "title": "Response Generate Creatives Api V1 Creatives Generate Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/creatives/{creative_id}": {
+      "get": {
+        "tags": [
+          "creatives"
+        ],
+        "summary": "Get Creative",
+        "description": "Получить креатив по ID.\n\nArgs:\n    creative_id: UUID креатива\n    db: Database session\n\nReturns:\n    CreativeResponse\n\nRaises:\n    HTTPException: 404 если не найден",
+        "operationId": "get_creative_api_v1_creatives__creative_id__get",
+        "parameters": [
+          {
+            "name": "creative_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Creative Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreativeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "creatives"
+        ],
+        "summary": "Delete Creative",
+        "description": "Удалить креатив.\n\nArgs:\n    creative_id: UUID креатива\n    db: Database session\n\nReturns:\n    204 No Content\n\nRaises:\n    HTTPException: 404 если не найден",
+        "operationId": "delete_creative_api_v1_creatives__creative_id__delete",
+        "parameters": [
+          {
+            "name": "creative_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Creative Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/publishing/publish": {
+      "post": {
+        "tags": [
+          "publishing",
+          "publishing"
+        ],
+        "summary": "Publish Campaign",
+        "description": "Публикует кампанию на указанные рекламные платформы\n\n- **campaign_id**: ID кампании для публикации\n- **channels**: Список каналов (vk/direct/avito). Если не указано - публикуем во все каналы кампании",
+        "operationId": "publish_campaign_api_v1_publishing_publish_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/publishing/status/{campaign_id}": {
+      "get": {
+        "tags": [
+          "publishing",
+          "publishing"
+        ],
+        "summary": "Get Publishing Status",
+        "description": "Получает статус публикации кампании\n\n- **campaign_id**: ID кампании",
+        "operationId": "get_publishing_status_api_v1_publishing_status__campaign_id__get",
+        "parameters": [
+          {
+            "name": "campaign_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Campaign Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishingStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/publishing/pause/{campaign_id}": {
+      "post": {
+        "tags": [
+          "publishing",
+          "publishing"
+        ],
+        "summary": "Pause Campaign",
+        "description": "Приостанавливает все размещения кампании на всех платформах\n\n- **campaign_id**: ID кампании",
+        "operationId": "pause_campaign_api_v1_publishing_pause__campaign_id__post",
+        "parameters": [
+          {
+            "name": "campaign_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Campaign Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PauseResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/campaigns/{campaign_id}": {
+      "get": {
+        "tags": [
+          "analytics",
+          "analytics"
+        ],
+        "summary": "Get Campaign Analytics",
+        "description": "Получает аналитику по кампании\n\n- **campaign_id**: ID кампании\n- **start_date**: Начальная дата фильтра (опционально)\n- **end_date**: Конечная дата фильтра (опционально)\n\nВозвращает:\n- Метрики кампании (CAC, ROAS, конверсии, выручка)\n- Разбивку по каналам",
+        "operationId": "get_campaign_analytics_api_v1_analytics_campaigns__campaign_id__get",
+        "parameters": [
+          {
+            "name": "campaign_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Campaign Id"
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Начальная дата (YYYY-MM-DD)",
+              "title": "Start Date"
+            },
+            "description": "Начальная дата (YYYY-MM-DD)"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Конечная дата (YYYY-MM-DD)",
+              "title": "End Date"
+            },
+            "description": "Конечная дата (YYYY-MM-DD)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampaignAnalyticsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/dashboard": {
+      "get": {
+        "tags": [
+          "analytics",
+          "analytics"
+        ],
+        "summary": "Get Dashboard Summary",
+        "description": "Получает сводку для дашборда\n\n- **start_date**: Начальная дата фильтра (опционально)\n- **end_date**: Конечная дата фильтра (опционально)\n\nВозвращает:\n- Общее количество кампаний (всего, активных, на паузе)\n- Общий бюджет и расход\n- Суммарные лиды, конверсии, выручка\n- Средние CAC и ROAS\n- Лучшая кампания по ROAS",
+        "operationId": "get_dashboard_summary_api_v1_analytics_dashboard_get",
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Начальная дата (YYYY-MM-DD)",
+              "title": "Start Date"
+            },
+            "description": "Начальная дата (YYYY-MM-DD)"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Конечная дата (YYYY-MM-DD)",
+              "title": "End Date"
+            },
+            "description": "Конечная дата (YYYY-MM-DD)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardSummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/settings": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Get Settings",
+        "description": "Получить список настроек с пагинацией и фильтрацией",
+        "operationId": "get_settings_api_v1_settings_get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Номер страницы",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Номер страницы"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Размер страницы",
+              "default": 50,
+              "title": "Page Size"
+            },
+            "description": "Размер страницы"
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Фильтр по категории",
+              "title": "Category"
+            },
+            "description": "Фильтр по категории"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Поиск по ключу или описанию",
+              "title": "Search"
+            },
+            "description": "Поиск по ключу или описанию"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Create Setting",
+        "description": "Создать новую настройку",
+        "operationId": "create_setting_api_v1_settings_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/settings/categories": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Get Settings By Categories",
+        "description": "Получить настройки, сгруппированные по категориям",
+        "operationId": "get_settings_by_categories_api_v1_settings_categories_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SettingsByCategory"
+                  },
+                  "type": "array",
+                  "title": "Response Get Settings By Categories Api V1 Settings Categories Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/settings/{key}": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Get Setting",
+        "description": "Получить настройку по ключу",
+        "operationId": "get_setting_api_v1_settings__key__get",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Update Setting",
+        "description": "Обновить настройку",
+        "operationId": "update_setting_api_v1_settings__key__put",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Delete Setting",
+        "description": "Удалить настройку",
+        "operationId": "delete_setting_api_v1_settings__key__delete",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/settings/{key}/value": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Get Setting Value",
+        "description": "Получить типизированное значение настройки",
+        "operationId": "get_setting_value_api_v1_settings__key__value_get",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingValueResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/settings/bulk": {
+      "post": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Bulk Update Settings",
+        "description": "Массовое создание/обновление настроек",
+        "operationId": "bulk_update_settings_api_v1_settings_bulk_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkSettingsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SettingResponse"
+                  },
+                  "type": "array",
+                  "title": "Response Bulk Update Settings Api V1 Settings Bulk Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/settings/category/{category}": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Get Settings By Category",
+        "description": "Получить все настройки определенной категории",
+        "operationId": "get_settings_by_category_api_v1_settings_category__category__get",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Category"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SettingResponse"
+                  },
+                  "title": "Response Get Settings By Category Api V1 Settings Category  Category  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyst/analyze/{campaign_id}": {
+      "post": {
+        "tags": [
+          "analyst"
+        ],
+        "summary": "Analyze Campaign",
+        "description": "Анализ кампании через AI Analyst\n\nГенерирует детальный анализ эффективности кампании с рекомендациями.",
+        "operationId": "analyze_campaign_api_v1_analyst_analyze__campaign_id__post",
+        "parameters": [
+          {
+            "name": "campaign_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Campaign Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/AnalysisRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Request"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampaignAnalysisResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyst/chat": {
+      "post": {
+        "tags": [
+          "analyst"
+        ],
+        "summary": "Chat With Analyst",
+        "description": "Чат с AI аналитиком\n\nЗадавайте вопросы о performance маркетинге и получайте экспертные ответы.",
+        "operationId": "chat_with_analyst_api_v1_analyst_chat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyst/campaign/{campaign_id}/data": {
+      "get": {
+        "tags": [
+          "analyst"
+        ],
+        "summary": "Get Campaign Data For Analysis",
+        "description": "Получить данные кампании для анализа\n\nВозвращает структурированные данные кампании с метриками.",
+        "operationId": "get_campaign_data_for_analysis_api_v1_analyst_campaign__campaign_id__data_get",
+        "parameters": [
+          {
+            "name": "campaign_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Campaign Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyst/health": {
+      "get": {
+        "tags": [
+          "analyst"
+        ],
+        "summary": "Check Analyst Health",
+        "description": "Проверка работоспособности AI Analyst\n\nПроверяет настройки OpenAI и доступность сервиса.",
+        "operationId": "check_analyst_health_api_v1_analyst_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/weekly/generate": {
+      "post": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Generate Weekly Report",
+        "description": "Генерация еженедельного отчета\n\nСоздает детальный отчет с AI анализом за указанный период.",
+        "operationId": "generate_weekly_report_api_v1_reports_weekly_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ReportGenerationRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Request"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeeklyReportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/weekly/preview": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Preview Weekly Data",
+        "description": "Превью данных для отчета\n\nВозвращает сырые данные без AI анализа для быстрого просмотра.",
+        "operationId": "preview_weekly_data_api_v1_reports_weekly_preview_get",
+        "parameters": [
+          {
+            "name": "weeks_back",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Weeks Back"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/status": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Get Reports Status",
+        "description": "Статус системы отчетов\n\nПроверяет настройки и готовность к генерации отчетов.",
+        "operationId": "get_reports_status_api_v1_reports_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportStatusResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/weekly/email": {
+      "post": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Send Weekly Report Email",
+        "description": "Отправка отчета по email\n\nГенерирует отчет и отправляет на email из настроек.",
+        "operationId": "send_weekly_report_email_api_v1_reports_weekly_email_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ReportGenerationRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Request"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/test": {
+      "post": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Test Report Generation",
+        "description": "Тест генерации отчета\n\nБыстрый тест системы отчетов без отправки email.",
+        "operationId": "test_report_generation_api_v1_reports_test_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/scheduler/status": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Get Scheduler Status",
+        "description": "Статус планировщика задач\n\nПоказывает расписание автоматических отчетов.",
+        "operationId": "get_scheduler_status_api_v1_reports_scheduler_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnalysisRequest": {
+        "properties": {
+          "question": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question",
+            "description": "Дополнительный вопрос для анализа"
+          }
+        },
+        "type": "object",
+        "title": "AnalysisRequest",
+        "description": "Схема запроса анализа кампании"
+      },
+      "BulkSettingsUpdate": {
+        "properties": {
+          "settings": {
+            "items": {
+              "$ref": "#/components/schemas/SettingCreate"
+            },
+            "type": "array",
+            "title": "Settings",
+            "description": "Список настроек для обновления"
+          },
+          "updated_by": {
+            "type": "string",
+            "title": "Updated By",
+            "description": "Кто обновил",
+            "default": "system"
+          }
+        },
+        "type": "object",
+        "required": [
+          "settings"
+        ],
+        "title": "BulkSettingsUpdate",
+        "description": "Схема для массового обновления настроек"
+      },
+      "CampaignAnalysisResponse": {
+        "properties": {
+          "campaign_id": {
+            "type": "integer",
+            "title": "Campaign Id",
+            "description": "ID кампании"
+          },
+          "analysis": {
+            "type": "string",
+            "title": "Analysis",
+            "description": "Текст анализа от AI"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/app__schemas__analyst__CampaignMetrics"
+          },
+          "recommendations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Recommendations",
+            "description": "Извлеченные рекомендации"
+          },
+          "generated_at": {
+            "type": "string",
+            "title": "Generated At",
+            "description": "Время генерации анализа"
+          },
+          "token_usage": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TokenUsage"
+              }
+            ],
+            "description": "Использование токенов"
+          }
+        },
+        "type": "object",
+        "required": [
+          "campaign_id",
+          "analysis",
+          "metrics",
+          "recommendations",
+          "generated_at",
+          "token_usage"
+        ],
+        "title": "CampaignAnalysisResponse",
+        "description": "Схема ответа анализа кампании"
+      },
+      "CampaignAnalyticsResponse": {
+        "properties": {
+          "metrics": {
+            "$ref": "#/components/schemas/app__schemas__analytics__CampaignMetrics"
+          },
+          "channels": {
+            "items": {
+              "$ref": "#/components/schemas/ChannelBreakdown"
+            },
+            "type": "array",
+            "title": "Channels"
+          }
+        },
+        "type": "object",
+        "required": [
+          "metrics",
+          "channels"
+        ],
+        "title": "CampaignAnalyticsResponse",
+        "description": "Полная аналитика по кампании"
+      },
+      "CampaignCreate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Title",
+            "description": "Название кампании"
+          },
+          "sku": {
+            "type": "string",
+            "pattern": "^[A-Z]+-[0-9]+$",
+            "title": "Sku",
+            "description": "SKU услуги (RELAX-60, DEEP-90)"
+          },
+          "budget_rub": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Budget Rub",
+            "description": "Бюджет в рублях"
+          },
+          "target_cac_rub": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Target Cac Rub",
+            "description": "Целевой CAC",
+            "default": 500
+          },
+          "target_roas": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Target Roas",
+            "description": "Целевой ROAS",
+            "default": 5.0
+          },
+          "channels": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Channels",
+            "description": "Площадки: vk, direct, avito"
+          },
+          "ab_test_enabled": {
+            "type": "boolean",
+            "title": "Ab Test Enabled",
+            "description": "Включен ли A/B тест",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "sku",
+          "budget_rub",
+          "channels"
+        ],
+        "title": "CampaignCreate",
+        "description": "Схема создания кампании",
+        "example": {
+          "ab_test_enabled": true,
+          "budget_rub": 15000,
+          "channels": [
+            "vk",
+            "direct"
+          ],
+          "sku": "RELAX-60",
+          "target_cac_rub": 450,
+          "target_roas": 5.0,
+          "title": "Запуск сентябрь — Релакс"
+        }
+      },
+      "CampaignListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CampaignResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "CampaignListResponse",
+        "description": "Список кампаний с пагинацией",
+        "example": {
+          "items": [],
+          "page": 1,
+          "page_size": 20,
+          "total": 0
+        }
+      },
+      "CampaignMetric": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "ID кампании"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Название кампании"
+          },
+          "sku": {
+            "type": "string",
+            "title": "Sku",
+            "description": "SKU продукта"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Статус кампании"
+          },
+          "leads": {
+            "type": "integer",
+            "title": "Leads",
+            "description": "Количество лидов"
+          },
+          "conversions": {
+            "type": "integer",
+            "title": "Conversions",
+            "description": "Количество конверсий"
+          },
+          "revenue": {
+            "type": "number",
+            "title": "Revenue",
+            "description": "Выручка (рублей)"
+          },
+          "spend": {
+            "type": "number",
+            "title": "Spend",
+            "description": "Расход (рублей)"
+          },
+          "roas": {
+            "type": "number",
+            "title": "Roas",
+            "description": "Return on Ad Spend"
+          },
+          "cac": {
+            "type": "number",
+            "title": "Cac",
+            "description": "Customer Acquisition Cost"
+          },
+          "target_cac": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Cac",
+            "description": "Целевой CAC"
+          },
+          "target_roas": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Roas",
+            "description": "Целевой ROAS"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "sku",
+          "status",
+          "leads",
+          "conversions",
+          "revenue",
+          "spend",
+          "roas",
+          "cac"
+        ],
+        "title": "CampaignMetric",
+        "description": "Метрики кампании"
+      },
+      "CampaignResponse": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Title",
+            "description": "Название кампании"
+          },
+          "sku": {
+            "type": "string",
+            "pattern": "^[A-Z]+-[0-9]+$",
+            "title": "Sku",
+            "description": "SKU услуги (RELAX-60, DEEP-90)"
+          },
+          "budget_rub": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Budget Rub",
+            "description": "Бюджет в рублях"
+          },
+          "target_cac_rub": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Target Cac Rub",
+            "description": "Целевой CAC",
+            "default": 500
+          },
+          "target_roas": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Target Roas",
+            "description": "Целевой ROAS",
+            "default": 5.0
+          },
+          "channels": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Channels",
+            "description": "Площадки: vk, direct, avito"
+          },
+          "ab_test_enabled": {
+            "type": "boolean",
+            "title": "Ab Test Enabled",
+            "description": "Включен ли A/B тест",
+            "default": false
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "sku",
+          "budget_rub",
+          "channels",
+          "id",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CampaignResponse",
+        "description": "Схема ответа API (Campaign из БД)",
+        "example": {
+          "ab_test_enabled": true,
+          "budget_rub": 15000,
+          "channels": [
+            "vk",
+            "direct"
+          ],
+          "sku": "RELAX-60",
+          "target_cac_rub": 450,
+          "target_roas": 5.0,
+          "title": "Запуск сентябрь — Релакс"
+        }
+      },
+      "CampaignUpdate": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "budget_rub": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Rub"
+          },
+          "target_cac_rub": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Cac Rub"
+          },
+          "target_roas": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Roas"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(draft|active|paused|stopped)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "ab_test_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ab Test Enabled"
+          }
+        },
+        "type": "object",
+        "title": "CampaignUpdate",
+        "description": "Схема обновления кампании (все поля опциональные)",
+        "example": {
+          "budget_rub": 20000,
+          "status": "active"
+        }
+      },
+      "ChannelBreakdown": {
+        "properties": {
+          "channel_code": {
+            "type": "string",
+            "title": "Channel Code"
+          },
+          "channel_name": {
+            "type": "string",
+            "title": "Channel Name"
+          },
+          "placements_count": {
+            "type": "integer",
+            "title": "Placements Count"
+          },
+          "active_placements": {
+            "type": "integer",
+            "title": "Active Placements"
+          },
+          "spent_rub": {
+            "type": "number",
+            "title": "Spent Rub"
+          },
+          "leads_count": {
+            "type": "integer",
+            "title": "Leads Count"
+          },
+          "conversions_count": {
+            "type": "integer",
+            "title": "Conversions Count"
+          },
+          "revenue_rub": {
+            "type": "number",
+            "title": "Revenue Rub"
+          },
+          "cac_rub": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cac Rub"
+          },
+          "roas": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roas"
+          }
+        },
+        "type": "object",
+        "required": [
+          "channel_code",
+          "channel_name",
+          "placements_count",
+          "active_placements",
+          "spent_rub",
+          "leads_count",
+          "conversions_count",
+          "revenue_rub",
+          "cac_rub",
+          "roas"
+        ],
+        "title": "ChannelBreakdown",
+        "description": "Разбивка метрик по каналу"
+      },
+      "ChatRequest": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Message",
+            "description": "Сообщение аналитику"
+          },
+          "campaign_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Campaign Id",
+            "description": "ID кампании для контекста"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "ChatRequest",
+        "description": "Схема запроса чата с аналитиком"
+      },
+      "ChatResponse": {
+        "properties": {
+          "response": {
+            "type": "string",
+            "title": "Response",
+            "description": "Ответ аналитика"
+          },
+          "campaign_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Campaign Id",
+            "description": "ID кампании из контекста"
+          }
+        },
+        "type": "object",
+        "required": [
+          "response"
+        ],
+        "title": "ChatResponse",
+        "description": "Схема ответа чата"
+      },
+      "CreativeCreate": {
+        "properties": {
+          "variant": {
+            "type": "string",
+            "pattern": "^[A-C]$",
+            "title": "Variant",
+            "description": "Вариант креатива (A, B, C)"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Title",
+            "description": "Заголовок"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Body",
+            "description": "Текст объявления"
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url",
+            "description": "URL изображения"
+          },
+          "cta": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cta",
+            "description": "Call-to-Action"
+          },
+          "campaign_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Campaign Id",
+            "description": "ID кампании"
+          },
+          "generated_by": {
+            "type": "string",
+            "pattern": "^(llm|manual)$",
+            "title": "Generated By",
+            "default": "manual"
+          }
+        },
+        "type": "object",
+        "required": [
+          "variant",
+          "title",
+          "body",
+          "campaign_id"
+        ],
+        "title": "CreativeCreate",
+        "description": "Схема создания креатива",
+        "example": {
+          "body": "Глубокое расслабление. Без боли. Тишина на час.",
+          "cta": "Записаться",
+          "title": "Релакс массаж 60 минут",
+          "variant": "A"
+        }
+      },
+      "CreativeGenerateRequest": {
+        "properties": {
+          "campaign_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Campaign Id",
+            "description": "ID кампании"
+          },
+          "count": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Count",
+            "description": "Количество вариантов (1-5)",
+            "default": 3
+          },
+          "temperature": {
+            "type": "number",
+            "maximum": 2.0,
+            "minimum": 0.0,
+            "title": "Temperature",
+            "description": "Креативность LLM",
+            "default": 0.8
+          }
+        },
+        "type": "object",
+        "required": [
+          "campaign_id"
+        ],
+        "title": "CreativeGenerateRequest",
+        "description": "Запрос на генерацию креативов через LLM",
+        "example": {
+          "campaign_id": "550e8400-e29b-41d4-a716-446655440001",
+          "count": 3,
+          "temperature": 0.8
+        }
+      },
+      "CreativeListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CreativeResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "CreativeListResponse",
+        "description": "Список креативов"
+      },
+      "CreativeResponse": {
+        "properties": {
+          "variant": {
+            "type": "string",
+            "pattern": "^[A-C]$",
+            "title": "Variant",
+            "description": "Вариант креатива (A, B, C)"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Title",
+            "description": "Заголовок"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Body",
+            "description": "Текст объявления"
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url",
+            "description": "URL изображения"
+          },
+          "cta": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cta",
+            "description": "Call-to-Action"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "campaign_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Campaign Id"
+          },
+          "generated_by": {
+            "type": "string",
+            "title": "Generated By"
+          },
+          "moderation_status": {
+            "type": "string",
+            "title": "Moderation Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "variant",
+          "title",
+          "body",
+          "id",
+          "campaign_id",
+          "generated_by",
+          "moderation_status",
+          "created_at"
+        ],
+        "title": "CreativeResponse",
+        "description": "Схема ответа API",
+        "example": {
+          "body": "Глубокое расслабление. Без боли. Тишина на час.",
+          "cta": "Записаться",
+          "title": "Релакс массаж 60 минут",
+          "variant": "A"
+        }
+      },
+      "DashboardSummary": {
+        "properties": {
+          "total_campaigns": {
+            "type": "integer",
+            "title": "Total Campaigns"
+          },
+          "active_campaigns": {
+            "type": "integer",
+            "title": "Active Campaigns"
+          },
+          "paused_campaigns": {
+            "type": "integer",
+            "title": "Paused Campaigns"
+          },
+          "total_budget_rub": {
+            "type": "number",
+            "title": "Total Budget Rub"
+          },
+          "total_spent_rub": {
+            "type": "number",
+            "title": "Total Spent Rub"
+          },
+          "budget_utilization": {
+            "type": "number",
+            "title": "Budget Utilization",
+            "description": "Процент использования бюджета"
+          },
+          "total_leads": {
+            "type": "integer",
+            "title": "Total Leads"
+          },
+          "total_conversions": {
+            "type": "integer",
+            "title": "Total Conversions"
+          },
+          "total_revenue_rub": {
+            "type": "number",
+            "title": "Total Revenue Rub"
+          },
+          "avg_cac_rub": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Cac Rub"
+          },
+          "avg_roas": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Roas"
+          },
+          "top_performing_campaign": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top Performing Campaign",
+            "description": "Лучшая кампания по ROAS"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_campaigns",
+          "active_campaigns",
+          "paused_campaigns",
+          "total_budget_rub",
+          "total_spent_rub",
+          "budget_utilization",
+          "total_leads",
+          "total_conversions",
+          "total_revenue_rub",
+          "avg_cac_rub",
+          "avg_roas"
+        ],
+        "title": "DashboardSummary",
+        "description": "Сводка для дашборда"
+      },
+      "DetailedReportData": {
+        "properties": {
+          "top_performers": {
+            "items": {
+              "$ref": "#/components/schemas/CampaignMetric"
+            },
+            "type": "array",
+            "title": "Top Performers",
+            "description": "Топ-кампании"
+          },
+          "needs_attention": {
+            "items": {
+              "$ref": "#/components/schemas/CampaignMetric"
+            },
+            "type": "array",
+            "title": "Needs Attention",
+            "description": "Кампании, требующие внимания"
+          },
+          "all_campaigns": {
+            "items": {
+              "$ref": "#/components/schemas/CampaignMetric"
+            },
+            "type": "array",
+            "title": "All Campaigns",
+            "description": "Все кампании"
+          }
+        },
+        "type": "object",
+        "required": [
+          "top_performers",
+          "needs_attention",
+          "all_campaigns"
+        ],
+        "title": "DetailedReportData",
+        "description": "Детальные данные отчета"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "PauseResponse": {
+        "properties": {
+          "campaign_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Campaign Id"
+          },
+          "paused_count": {
+            "type": "integer",
+            "title": "Paused Count"
+          },
+          "failed_count": {
+            "type": "integer",
+            "title": "Failed Count"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "campaign_id",
+          "paused_count",
+          "failed_count",
+          "message"
+        ],
+        "title": "PauseResponse",
+        "description": "Ответ после приостановки кампании"
+      },
+      "PlacementInfo": {
+        "properties": {
+          "placement_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Placement Id"
+          },
+          "channel": {
+            "type": "string",
+            "title": "Channel"
+          },
+          "creative_variant": {
+            "type": "string",
+            "title": "Creative Variant"
+          },
+          "external_id": {
+            "type": "string",
+            "title": "External Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "placement_id",
+          "channel",
+          "creative_variant",
+          "external_id",
+          "status",
+          "created_at"
+        ],
+        "title": "PlacementInfo",
+        "description": "Информация о размещении"
+      },
+      "PublishRequest": {
+        "properties": {
+          "campaign_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Campaign Id",
+            "description": "ID кампании для публикации"
+          },
+          "channels": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Channels",
+            "description": "Список каналов для публикации. Если None - публикуем во все каналы кампании"
+          }
+        },
+        "type": "object",
+        "required": [
+          "campaign_id"
+        ],
+        "title": "PublishRequest",
+        "description": "Запрос на публикацию кампании"
+      },
+      "PublishResponse": {
+        "properties": {
+          "campaign_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Campaign Id"
+          },
+          "placements": {
+            "items": {
+              "$ref": "#/components/schemas/PlacementInfo"
+            },
+            "type": "array",
+            "title": "Placements"
+          },
+          "success_count": {
+            "type": "integer",
+            "title": "Success Count"
+          },
+          "failed_count": {
+            "type": "integer",
+            "title": "Failed Count"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "campaign_id",
+          "placements",
+          "success_count",
+          "failed_count",
+          "message"
+        ],
+        "title": "PublishResponse",
+        "description": "Ответ после публикации"
+      },
+      "PublishingStatusResponse": {
+        "properties": {
+          "campaign_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Campaign Id"
+          },
+          "campaign_title": {
+            "type": "string",
+            "title": "Campaign Title"
+          },
+          "total_placements": {
+            "type": "integer",
+            "title": "Total Placements"
+          },
+          "active_placements": {
+            "type": "integer",
+            "title": "Active Placements"
+          },
+          "paused_placements": {
+            "type": "integer",
+            "title": "Paused Placements"
+          },
+          "failed_placements": {
+            "type": "integer",
+            "title": "Failed Placements"
+          },
+          "placements": {
+            "items": {
+              "$ref": "#/components/schemas/PlacementInfo"
+            },
+            "type": "array",
+            "title": "Placements"
+          }
+        },
+        "type": "object",
+        "required": [
+          "campaign_id",
+          "campaign_title",
+          "total_placements",
+          "active_placements",
+          "paused_placements",
+          "failed_placements",
+          "placements"
+        ],
+        "title": "PublishingStatusResponse",
+        "description": "Статус публикации кампании"
+      },
+      "ReportGenerationRequest": {
+        "properties": {
+          "weeks_back": {
+            "type": "integer",
+            "maximum": 12.0,
+            "minimum": 1.0,
+            "title": "Weeks Back",
+            "description": "Количество недель назад (1-12)",
+            "default": 1
+          }
+        },
+        "type": "object",
+        "title": "ReportGenerationRequest",
+        "description": "Схема запроса генерации отчета"
+      },
+      "ReportPeriod": {
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "title": "Start Date",
+            "description": "Дата начала (ISO формат)"
+          },
+          "end_date": {
+            "type": "string",
+            "title": "End Date",
+            "description": "Дата окончания (ISO формат)"
+          },
+          "weeks": {
+            "type": "integer",
+            "title": "Weeks",
+            "description": "Количество недель"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start_date",
+          "end_date",
+          "weeks"
+        ],
+        "title": "ReportPeriod",
+        "description": "Период отчета"
+      },
+      "ReportSettings": {
+        "properties": {
+          "reports_email": {
+            "type": "string",
+            "title": "Reports Email",
+            "description": "Email для отправки отчетов"
+          },
+          "auto_generated": {
+            "type": "boolean",
+            "title": "Auto Generated",
+            "description": "Автоматически сгенерирован"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reports_email",
+          "auto_generated"
+        ],
+        "title": "ReportSettings",
+        "description": "Настройки отчета"
+      },
+      "ReportStatusResponse": {
+        "properties": {
+          "reports_enabled": {
+            "type": "boolean",
+            "title": "Reports Enabled",
+            "description": "Включены ли отчеты"
+          },
+          "reports_email": {
+            "type": "string",
+            "title": "Reports Email",
+            "description": "Email для отчетов"
+          },
+          "ai_available": {
+            "type": "boolean",
+            "title": "Ai Available",
+            "description": "Доступен ли AI сервис"
+          },
+          "last_check": {
+            "type": "string",
+            "title": "Last Check",
+            "description": "Время последней проверки"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "description": "Сообщение о статусе"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reports_enabled",
+          "reports_email",
+          "ai_available",
+          "last_check"
+        ],
+        "title": "ReportStatusResponse",
+        "description": "Схема статуса системы отчетов"
+      },
+      "ReportSummary": {
+        "properties": {
+          "total_leads": {
+            "type": "integer",
+            "title": "Total Leads",
+            "description": "Общее количество лидов"
+          },
+          "total_conversions": {
+            "type": "integer",
+            "title": "Total Conversions",
+            "description": "Общее количество конверсий"
+          },
+          "total_revenue": {
+            "type": "number",
+            "title": "Total Revenue",
+            "description": "Общая выручка (рублей)"
+          },
+          "conversion_rate": {
+            "type": "number",
+            "title": "Conversion Rate",
+            "description": "Общий процент конверсии"
+          },
+          "active_campaigns": {
+            "type": "integer",
+            "title": "Active Campaigns",
+            "description": "Количество активных кампаний"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_leads",
+          "total_conversions",
+          "total_revenue",
+          "conversion_rate",
+          "active_campaigns"
+        ],
+        "title": "ReportSummary",
+        "description": "Сводка метрик"
+      },
+      "SettingCreate": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Key",
+            "description": "Ключ настройки"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value",
+            "description": "Значение настройки"
+          },
+          "value_type": {
+            "type": "string",
+            "maxLength": 20,
+            "title": "Value Type",
+            "description": "Тип значения: int, float, string, bool"
+          },
+          "category": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Category",
+            "description": "Категория: financial, pricing, alerts, ai, operational"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "Описание настройки"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By",
+            "description": "Кто обновил",
+            "default": "system"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "value",
+          "value_type",
+          "category"
+        ],
+        "title": "SettingCreate",
+        "description": "Схема для создания настройки"
+      },
+      "SettingListResponse": {
+        "properties": {
+          "settings": {
+            "items": {
+              "$ref": "#/components/schemas/SettingResponse"
+            },
+            "type": "array",
+            "title": "Settings"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Общее количество настроек"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "description": "Номер страницы"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size",
+            "description": "Размер страницы"
+          },
+          "pages": {
+            "type": "integer",
+            "title": "Pages",
+            "description": "Общее количество страниц"
+          }
+        },
+        "type": "object",
+        "required": [
+          "settings",
+          "total",
+          "page",
+          "page_size",
+          "pages"
+        ],
+        "title": "SettingListResponse",
+        "description": "Схема ответа для списка настроек"
+      },
+      "SettingResponse": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Key",
+            "description": "Ключ настройки"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value",
+            "description": "Значение настройки"
+          },
+          "value_type": {
+            "type": "string",
+            "maxLength": 20,
+            "title": "Value Type",
+            "description": "Тип значения: int, float, string, bool"
+          },
+          "category": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Category",
+            "description": "Категория: financial, pricing, alerts, ai, operational"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "Описание настройки"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By",
+            "description": "Кто обновил",
+            "default": "system"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At",
+            "description": "Время последнего обновления"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "value",
+          "value_type",
+          "category"
+        ],
+        "title": "SettingResponse",
+        "description": "Схема ответа для настройки"
+      },
+      "SettingUpdate": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value",
+            "description": "Новое значение настройки"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "Новое описание"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By",
+            "description": "Кто обновил"
+          }
+        },
+        "type": "object",
+        "title": "SettingUpdate",
+        "description": "Схема для обновления настройки"
+      },
+      "SettingValueResponse": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key",
+            "description": "Ключ настройки"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              }
+            ],
+            "title": "Value",
+            "description": "Типизированное значение"
+          },
+          "value_type": {
+            "type": "string",
+            "title": "Value Type",
+            "description": "Тип значения"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category",
+            "description": "Категория настройки"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "value",
+          "value_type",
+          "category"
+        ],
+        "title": "SettingValueResponse",
+        "description": "Схема для получения типизированного значения настройки"
+      },
+      "SettingsByCategory": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "title": "Category",
+            "description": "Категория"
+          },
+          "settings": {
+            "items": {
+              "$ref": "#/components/schemas/SettingResponse"
+            },
+            "type": "array",
+            "title": "Settings",
+            "description": "Настройки категории"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "description": "Количество настроек в категории"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "settings",
+          "count"
+        ],
+        "title": "SettingsByCategory",
+        "description": "Схема для получения настроек по категории"
+      },
+      "TokenUsage": {
+        "properties": {
+          "prompt_tokens": {
+            "type": "integer",
+            "title": "Prompt Tokens",
+            "description": "Токены в промпте"
+          },
+          "completion_tokens": {
+            "type": "integer",
+            "title": "Completion Tokens",
+            "description": "Токены в ответе"
+          },
+          "total_tokens": {
+            "type": "integer",
+            "title": "Total Tokens",
+            "description": "Общее количество токенов"
+          }
+        },
+        "type": "object",
+        "required": [
+          "prompt_tokens",
+          "completion_tokens",
+          "total_tokens"
+        ],
+        "title": "TokenUsage",
+        "description": "Использование токенов OpenAI"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WeeklyReportResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "ID отчета"
+          },
+          "generated_at": {
+            "type": "string",
+            "title": "Generated At",
+            "description": "Время генерации (ISO формат)"
+          },
+          "period": {
+            "$ref": "#/components/schemas/ReportPeriod"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/ReportSummary"
+          },
+          "ai_analysis": {
+            "type": "string",
+            "title": "Ai Analysis",
+            "description": "AI анализ отчета"
+          },
+          "detailed_data": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DetailedReportData"
+              }
+            ],
+            "description": "Детальные данные"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/ReportSettings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "generated_at",
+          "period",
+          "summary",
+          "ai_analysis",
+          "detailed_data",
+          "settings"
+        ],
+        "title": "WeeklyReportResponse",
+        "description": "Схема ответа еженедельного отчета"
+      },
+      "app__schemas__analyst__CampaignMetrics": {
+        "properties": {
+          "total_leads": {
+            "type": "integer",
+            "title": "Total Leads",
+            "description": "Общее количество лидов"
+          },
+          "total_conversions": {
+            "type": "integer",
+            "title": "Total Conversions",
+            "description": "Общее количество конверсий"
+          },
+          "conversion_rate": {
+            "type": "number",
+            "title": "Conversion Rate",
+            "description": "Процент конверсии"
+          },
+          "total_revenue": {
+            "type": "number",
+            "title": "Total Revenue",
+            "description": "Общая выручка (рублей)"
+          },
+          "total_spend": {
+            "type": "number",
+            "title": "Total Spend",
+            "description": "Общие расходы (рублей)"
+          },
+          "roas": {
+            "type": "number",
+            "title": "Roas",
+            "description": "Return on Ad Spend"
+          },
+          "cac": {
+            "type": "number",
+            "title": "Cac",
+            "description": "Customer Acquisition Cost (рублей)"
+          },
+          "period_days": {
+            "type": "integer",
+            "title": "Period Days",
+            "description": "Период анализа (дней)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_leads",
+          "total_conversions",
+          "conversion_rate",
+          "total_revenue",
+          "total_spend",
+          "roas",
+          "cac",
+          "period_days"
+        ],
+        "title": "CampaignMetrics",
+        "description": "Метрики кампании"
+      },
+      "app__schemas__analytics__CampaignMetrics": {
+        "properties": {
+          "campaign_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Campaign Id"
+          },
+          "campaign_title": {
+            "type": "string",
+            "title": "Campaign Title"
+          },
+          "sku": {
+            "type": "string",
+            "title": "Sku"
+          },
+          "budget_rub": {
+            "type": "number",
+            "title": "Budget Rub"
+          },
+          "spent_rub": {
+            "type": "number",
+            "title": "Spent Rub",
+            "description": "Потрачено (из placements)",
+            "default": 0.0
+          },
+          "target_cac_rub": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Cac Rub"
+          },
+          "target_roas": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Roas"
+          },
+          "impressions": {
+            "type": "integer",
+            "title": "Impressions",
+            "description": "Показы",
+            "default": 0
+          },
+          "clicks": {
+            "type": "integer",
+            "title": "Clicks",
+            "description": "Клики",
+            "default": 0
+          },
+          "ctr": {
+            "type": "number",
+            "title": "Ctr",
+            "description": "CTR (%)",
+            "default": 0.0
+          },
+          "leads_count": {
+            "type": "integer",
+            "title": "Leads Count",
+            "description": "Количество лидов",
+            "default": 0
+          },
+          "conversions_count": {
+            "type": "integer",
+            "title": "Conversions Count",
+            "description": "Количество конверсий",
+            "default": 0
+          },
+          "conversion_rate": {
+            "type": "number",
+            "title": "Conversion Rate",
+            "description": "CR (%)",
+            "default": 0.0
+          },
+          "revenue_rub": {
+            "type": "number",
+            "title": "Revenue Rub",
+            "description": "Выручка",
+            "default": 0.0
+          },
+          "actual_cac_rub": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Cac Rub",
+            "description": "Фактический CAC"
+          },
+          "actual_roas": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Roas",
+            "description": "Фактический ROAS"
+          },
+          "cac_status": {
+            "type": "string",
+            "title": "Cac Status",
+            "description": "on_track | over_target | under_target | unknown",
+            "default": "unknown"
+          },
+          "roas_status": {
+            "type": "string",
+            "title": "Roas Status",
+            "description": "on_track | over_target | under_target | unknown",
+            "default": "unknown"
+          }
+        },
+        "type": "object",
+        "required": [
+          "campaign_id",
+          "campaign_title",
+          "sku",
+          "budget_rub",
+          "target_cac_rub",
+          "target_roas"
+        ],
+        "title": "CampaignMetrics",
+        "description": "Метрики кампании"
+      }
+    }
+  }
+}

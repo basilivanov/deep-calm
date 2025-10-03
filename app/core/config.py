@@ -4,8 +4,11 @@ DeepCalm — Configuration Settings
 Загружает настройки из .env файла используя pydantic-settings.
 Следует стандартам из cortex/STANDARDS.yml (env_prefix: DC_)
 """
-from pydantic_settings import BaseSettings, SettingsConfigDict
+import os
+from pathlib import Path
 from typing import List
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -93,6 +96,9 @@ class Settings(BaseSettings):
     upload_conversions_cron: str = "0 5 * * *"
     analyst_report_cron: str = "0 9 * * MON"
 
+    # Freeze / maintenance
+    freeze_toggle_file: str = "/etc/deep-calm/freeze.enabled"
+
     @property
     def is_dev(self) -> bool:
         """Проверка development окружения"""
@@ -107,6 +113,18 @@ class Settings(BaseSettings):
     def is_prod(self) -> bool:
         """Проверка production окружения"""
         return self.app_env == "prod"
+
+    def is_freeze_mode(self) -> bool:
+        """Флаг read-only режима.
+
+        Срабатывает, если установлена переменная окружения DC_FREEZE (1/true)
+        или существует файл-флаг freeze_toggle_file.
+        """
+        env_value = os.getenv("DC_FREEZE")
+        if env_value is not None:
+            return env_value.strip().lower() in {"1", "true", "yes", "on"}
+
+        return Path(self.freeze_toggle_file).exists()
 
 
 # Singleton instance

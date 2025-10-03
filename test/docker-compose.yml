@@ -1,29 +1,45 @@
-name: dc_test
+name: dctest
 services:
   dc-db:
     image: postgres:16
-    container_name: dc_test-db
+    container_name: dc-test-db
     environment: { POSTGRES_DB: dc_test, POSTGRES_USER: dc, POSTGRES_PASSWORD: dcpass }
     volumes: [ "./pgdata:/var/lib/postgresql/data" ]
-    ports: [ "127.0.0.1:5433:5432" ]
     restart: unless-stopped
-    healthcheck: { test: ["CMD-SHELL","pg_isready -U dc -d dc_test || exit 1"], interval: 10s, timeout: 5s, retries: 10 }
+
   dc-redis:
     image: redis:7
-    container_name: dc_test-redis
+    container_name: dc-test-redis
     command: ["redis-server","--save","60","100","--loglevel","warning"]
     volumes: [ "./redisdata:/data" ]
-    ports: [ "127.0.0.1:6380:6379" ]
     restart: unless-stopped
-  dc-admin:
-    image: nginx:alpine
-    container_name: dc_test-admin
-    volumes: [ "./admin/html:/usr/share/nginx/html:ro" ]
-    ports: [ "127.0.0.1:8181:80" ]
-    restart: unless-stopped
+
+  dc-migrate:
+    image: deep-calm-api:test
+    container_name: dc-test-migrate
+    environment:
+      DATABASE_URL: postgresql://dc:dcpass@dc-db:5432/dc_test
+    command: alembic upgrade head
+    depends_on: [ dc-db ]
+    restart: "no"
+
   dc-api:
-    image: alpine:3.20
-    container_name: dc_test-api
-    command: ["/bin/sh","-lc","while true; do ( printf 'HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nok\n' | nc -lp 8080 -k ); done"]
-    ports: [ "127.0.0.1:8182:8080" ]
+    image: deep-calm-api:test
+    container_name: dc-test-api
+    environment:
+      DC_ENV: test
+      DC_DB_URL: postgresql://dc:dcpass@dc-db:5432/dc_test
+      DC_REDIS_URL: redis://dc-redis:6379/0
+      DATABASE_URL: postgresql://dc:dcpass@dc-db:5432/dc_test
+    ports: [ "127.0.0.1:8182:8000" ]
+    depends_on: [ dc-db, dc-redis, dc-migrate ]
     restart: unless-stopped
+
+  dc-admin:
+    image: deep-calm-frontend:test
+    container_name: dc-test-admin
+    environment:
+      - HOST=0.0.0.0
+    ports: [ "127.0.0.1:8181:3000" ]
+    restart: unless-stopped
+    depends_on: [ dc-api ]

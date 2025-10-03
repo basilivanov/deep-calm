@@ -13,6 +13,7 @@ import structlog
 
 from app.core.config import settings
 from app.core.logging import setup_logging
+from app.services.scheduler import scheduler
 
 
 # Настройка логирования
@@ -41,9 +42,13 @@ async def lifespan(app: FastAPI):
         svc="dc-api"
     )
 
+    # Запускаем планировщик задач
+    scheduler.start()
+
     yield
 
     # Shutdown
+    scheduler.stop()
     logger.info("application_shutdown")
 
 
@@ -97,6 +102,26 @@ async def add_correlation_id(request: Request, call_next):
     response.headers["X-Correlation-ID"] = correlation_id
 
     return response
+
+
+@app.middleware("http")
+async def enforce_read_only_mode(request: Request, call_next):
+    """Блокирует мутационные запросы, если включён режим DC_FREEZE."""
+    if request.method in {"POST", "PUT", "PATCH", "DELETE"} and settings.is_freeze_mode():
+        logger.warning(
+            "request_blocked_read_only_mode",
+            method=request.method,
+            path=str(request.url)
+        )
+        return JSONResponse(
+            status_code=503,
+            content={
+                "error": "read_only_mode",
+                "message": "API временно работает в режиме только для чтения"
+            }
+        )
+
+    return await call_next(request)
 
 
 @app.exception_handler(Exception)
@@ -164,9 +189,13 @@ async def root():
 
 
 # API v1 routers
-from app.api.v1 import analytics, campaigns, creatives, publishing
+from app.api.v1 import analytics, campaigns, creatives, publishing, analyst, reports
+from app.api.v1 import settings as settings_api
 
 app.include_router(campaigns.router, prefix="/api/v1", tags=["campaigns"])
 app.include_router(creatives.router, prefix="/api/v1", tags=["creatives"])
 app.include_router(publishing.router, prefix="/api/v1", tags=["publishing"])
 app.include_router(analytics.router, prefix="/api/v1", tags=["analytics"])
+app.include_router(settings_api.router, prefix="/api/v1", tags=["settings"])
+app.include_router(analyst.router, prefix="/api/v1", tags=["analyst"])
+app.include_router(reports.router, prefix="/api/v1", tags=["reports"])

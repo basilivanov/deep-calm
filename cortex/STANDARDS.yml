@@ -8,6 +8,18 @@ naming:
 environments:
   domains: { dev: dev.dc.vasiliy-ivanov.ru, test: test.dc.vasiliy-ivanov.ru }
   db: { engine: postgres16 }
+  ports:
+    containers:
+      dev: { frontend: 3000, backend: 8000 }
+      test: { frontend: 3001, backend: 8001 }
+      staging: { frontend: 3002, backend: 8002 }
+      prod: { frontend: nginx, backend: nginx }
+    host_forward:
+      dev: { frontend: "127.0.0.1:8083→3000", backend: "127.0.0.1:8082→8000" }
+      test: { frontend: "127.0.0.1:8181→3001", backend: "127.0.0.1:8182→8001" }
+  compose:
+    dev_project: dcdev
+    containers: [dc-dev-db, dc-dev-redis, dc-dev-api, dc-dev-admin]
 logging:
   json: true
   fields: [ts, level, app, svc, env, req_id, route, status, msg]

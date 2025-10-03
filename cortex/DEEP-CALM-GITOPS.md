@@ -10,6 +10,16 @@
 
 ---
 
+## Dev/Test Hardening (Phase 1.75)
+
+- **PR Checks**: lint/test FE, pytest BE, генерация `openapi.json`, `openapi-diff` против базовой ветки, публикация превью на `https://pr-<id>.dev.dc…`.
+- **Fast path FE-only**: если изменён только `frontend/**` и `openapi-diff == 0`, деплой только фронта на DEV без рестарта API и миграций.
+- **Deploy jobs**: `deploy-dev` / `deploy-test` обязательно выполняют `alembic upgrade head` и проверяют `DEPLOY_ENABLED`; перед TEST‑миграциями делается snapshot БД.
+- **Стоп‑краны**: переменная `DEPLOY_ENABLED=0` блокирует все деплои; middleware читает `DC_FREEZE` и переводит API в read‑only.
+- **Cleanup**: после merge/close PR удаляем `/var/www/dc/previews/pr-<id>/` и эпемерные docker‑проекты.
+
+---
+
 ## Архитектура GitOps
 
 ```
