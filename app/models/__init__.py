@@ -10,6 +10,7 @@ from app.models.creative import Creative
 from app.models.placement import Placement
 from app.models.lead import Lead
 from app.models.conversion import Conversion
+from app.models.setting import Setting
 
 __all__ = [
     "Base",
@@ -19,4 +20,5 @@ __all__ = [
     "Placement",
     "Lead",
     "Conversion",
+    "Setting",
 ]

@@ -3,6 +3,7 @@ name: Deploy Dev
 on:
   push:
     branches: ["develop"]
+  workflow_dispatch:
 
 env:
   PYTHON_VERSION: "3.12"

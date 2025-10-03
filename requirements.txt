@@ -4,6 +4,12 @@ uvicorn[standard]==0.27.1
 pydantic==2.6.1
 pydantic-settings==2.1.0
 
+# AI Integration
+openai==1.12.0
+
+# Task Scheduling
+apscheduler==3.10.4
+
 # Database
 sqlalchemy==2.0.27
 alembic==1.13.1
