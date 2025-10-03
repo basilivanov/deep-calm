@@ -142,6 +142,31 @@ test('Dashboard показывает CAC график', async ({ page }) => {
 });
 ```
 
+### 6. Frontend (Vitest + Testing Library)
+
+Для UI компонетов используется Vitest с jsdom-окружением.
+
+**Где:** `frontend/src/**/__tests__/*.test.tsx`
+
+**Запуск:**
+```bash
+cd /opt/deep-calm/frontend
+npm run test
+```
+
+**Пример:**
+```tsx
+// frontend/src/components/__tests__/MetricCard.test.tsx
+import { render, screen } from '@testing-library/react';
+import { MetricCard } from '../MetricCard';
+
+test('карточка отображает заголовок и значение', () => {
+  render(<MetricCard title="Выручка" value="100 ₽" />);
+  expect(screen.getByText('Выручка')).toBeInTheDocument();
+  expect(screen.getByText('100 ₽')).toBeInTheDocument();
+});
+```
+
 ## Fixtures (conftest.py)
 
 ```python

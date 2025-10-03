@@ -16,7 +16,7 @@
 - Maintenance стоп‑кран: файл `/etc/nginx/maintenance/{dev|test}.enabled` → ответ 503, кроме `/api/healthz`.
 
 ### 0.3 CI/CD
-- PR‑pipeline: lint/test FE, pytest BE, генерация `openapi.json`, `openapi-diff`, публикация превью, комментарий со ссылкой.
+- PR‑pipeline: `npm run lint`, `npm run test`, `npm run build`, `pytest`, экспорт `openapi.json`, `openapi-diff`, публикация превью, комментарий со ссылкой.
 - Экспорт схемы делается через `python scripts/export_openapi.py` (файл сохраняется в `cortex/APIs/openapi.json`).
 - Fast‑path для фронтовых правок (`frontend/**` + `openapi-diff == 0`): деплой только фронта на DEV без миграций.
 - `deploy-dev` и `deploy-test` запускают `alembic upgrade head`, уважают `DEPLOY_ENABLED`, перед TEST‑миграциями делается dump БД.
