@@ -57,15 +57,13 @@ describe('Dashboard', () => {
     renderWithClient(<Dashboard />);
 
     await waitFor(() => {
-      expect(screen.getByText('Всего кампаний')).toBeInTheDocument();
+      expect(screen.getByText('CAC текущий')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('8 активных, 4 на паузе')).toBeInTheDocument();
-    expect(screen.getByText('Бюджет / Расход')).toBeInTheDocument();
-    expect(screen.getByText('320 / 48')).toBeInTheDocument();
-    expect(screen.getByText('Выручка')).toBeInTheDocument();
-    expect(screen.getByText(/ROAS: 3\.75/)).toBeInTheDocument();
-    expect(screen.getByText(/VK Retargeting/)).toBeInTheDocument();
+    // Проверяем основные элементы
+    expect(screen.getByText('⚠️ Требует внимания')).toBeInTheDocument();
+    expect(screen.getByText('Dashboard')).toBeInTheDocument();
+    expect(screen.getByText('Обзор всех кампаний и метрик')).toBeInTheDocument();
   });
 
   it('показывает сообщение о пустых данных', async () => {

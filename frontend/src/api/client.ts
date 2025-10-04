@@ -93,3 +93,33 @@ export const analyticsApi = {
   campaignMetrics: (id: string, params?: { start_date?: string; end_date?: string }) =>
     apiClient.get(`/analytics/campaigns/${id}`, { params }),
 };
+
+// Publishing API
+export const publishingApi = {
+  publish: (campaignId: string) =>
+    apiClient.post(`/publishing/publish`, { campaign_id: campaignId }),
+
+  status: (campaignId: string) =>
+    apiClient.get(`/publishing/status/${campaignId}`),
+
+  pause: (campaignId: string) =>
+    apiClient.post(`/publishing/pause/${campaignId}`),
+};
+
+// Integrations API
+export const integrationsApi = {
+  list: () =>
+    apiClient.get('/integrations'),
+
+  connect: (type: string, token: string) =>
+    apiClient.post(`/integrations/${type}/connect`, { token }),
+
+  disconnect: (type: string) =>
+    apiClient.post(`/integrations/${type}/disconnect`),
+
+  sync: (type: string) =>
+    apiClient.post(`/integrations/${type}/sync`),
+
+  status: (type: string) =>
+    apiClient.get(`/integrations/${type}/status`),
+};

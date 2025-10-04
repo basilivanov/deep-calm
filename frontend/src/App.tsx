@@ -1,6 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Dashboard } from './pages/Dashboard';
 import { AIAnalyst } from './pages/AIAnalyst';
+import { Campaigns } from './pages/Campaigns';
+import { Integrations } from './pages/Integrations';
 import { useState } from 'react';
 
 const queryClient = new QueryClient({
@@ -13,7 +15,7 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<'dashboard' | 'analyst'>('dashboard');
+  const [currentPage, setCurrentPage] = useState<'dashboard' | 'campaigns' | 'integrations' | 'analyst'>('dashboard');
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -27,23 +29,43 @@ function App() {
               </h1>
 
               {/* Navigation */}
-              <nav className="flex space-x-4">
+              <nav className="flex space-x-2">
                 <button
                   onClick={() => setCurrentPage('dashboard')}
                   className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                     currentPage === 'dashboard'
                       ? 'bg-dc-accent text-white'
-                      : 'text-dc-text hover:text-dc-primary'
+                      : 'text-dc-ink hover:text-dc-primary hover:bg-dc-warm-100'
                   }`}
                 >
                   📊 Dashboard
+                </button>
+                <button
+                  onClick={() => setCurrentPage('campaigns')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    currentPage === 'campaigns'
+                      ? 'bg-dc-accent text-white'
+                      : 'text-dc-ink hover:text-dc-primary hover:bg-dc-warm-100'
+                  }`}
+                >
+                  🎯 Кампании
+                </button>
+                <button
+                  onClick={() => setCurrentPage('integrations')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    currentPage === 'integrations'
+                      ? 'bg-dc-accent text-white'
+                      : 'text-dc-ink hover:text-dc-primary hover:bg-dc-warm-100'
+                  }`}
+                >
+                  🔗 Интеграции
                 </button>
                 <button
                   onClick={() => setCurrentPage('analyst')}
                   className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                     currentPage === 'analyst'
                       ? 'bg-dc-accent text-white'
-                      : 'text-dc-text hover:text-dc-primary'
+                      : 'text-dc-ink hover:text-dc-primary hover:bg-dc-warm-100'
                   }`}
                 >
                   🤖 AI Analyst
@@ -56,6 +78,8 @@ function App() {
         {/* Main content */}
         <main className="max-w-7xl mx-auto">
           {currentPage === 'dashboard' && <Dashboard />}
+          {currentPage === 'campaigns' && <Campaigns />}
+          {currentPage === 'integrations' && <Integrations />}
           {currentPage === 'analyst' && <AIAnalyst />}
         </main>
       </div>
