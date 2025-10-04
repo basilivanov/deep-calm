@@ -11,11 +11,23 @@ env:
 
 jobs:
   build-and-deploy:
-    if: ${{ secrets.DC_REGISTRY_URL != '' && secrets.DC_TEST_SSH_HOST != '' && secrets.DC_TEST_SSH_KEY != '' }}
     runs-on: ubuntu-latest
     environment: test
+    env:
+      REGISTRY_URL: ${{ secrets.DC_REGISTRY_URL }}
+      REGISTRY_USER: ${{ secrets.DC_REGISTRY_USER }}
+      REGISTRY_PASSWORD: ${{ secrets.DC_REGISTRY_PASSWORD }}
+      TEST_SSH_HOST: ${{ secrets.DC_TEST_SSH_HOST }}
+      TEST_SSH_USER: ${{ secrets.DC_TEST_SSH_USER }}
+      TEST_SSH_KEY: ${{ secrets.DC_TEST_SSH_KEY }}
 
     steps:
+      - name: Ensure required secrets are present
+        run: |
+          if [ -z "$REGISTRY_URL" ] || [ -z "$REGISTRY_USER" ] || [ -z "$REGISTRY_PASSWORD" ] || [ -z "$TEST_SSH_HOST" ] || [ -z "$TEST_SSH_USER" ] || [ -z "$TEST_SSH_KEY" ]; then
+            echo "Missing DC_* secrets. Skipping deploy-test." >&2
+            exit 1
+          fi
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -25,9 +37,9 @@ jobs:
       - name: Log in to registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ secrets.DC_REGISTRY_URL }}
-          username: ${{ secrets.DC_REGISTRY_USER }}
-          password: ${{ secrets.DC_REGISTRY_PASSWORD }}
+          registry: ${{ env.REGISTRY_URL }}
+          username: ${{ env.REGISTRY_USER }}
+          password: ${{ env.REGISTRY_PASSWORD }}
 
       - name: Build and push API image
         uses: docker/build-push-action@v5
@@ -36,7 +48,7 @@ jobs:
           file: Dockerfile.api
           push: true
           tags: |
-            ${{ secrets.DC_REGISTRY_URL }}/deep-calm-api:test
+            ${{ env.REGISTRY_URL }}/deep-calm-api:test
 
       - name: Build and push Frontend image
         uses: docker/build-push-action@v5
@@ -45,18 +57,18 @@ jobs:
           file: Dockerfile.frontend
           push: true
           tags: |
-            ${{ secrets.DC_REGISTRY_URL }}/deep-calm-frontend:test
+            ${{ env.REGISTRY_URL }}/deep-calm-frontend:test
 
       - name: Deploy to TEST
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.DC_TEST_SSH_HOST }}
-          username: ${{ secrets.DC_TEST_SSH_USER }}
-          key: ${{ secrets.DC_TEST_SSH_KEY }}
+          host: ${{ env.TEST_SSH_HOST }}
+          username: ${{ env.TEST_SSH_USER }}
+          key: ${{ env.TEST_SSH_KEY }}
           script: |
-            docker login ${{ secrets.DC_REGISTRY_URL }} -u ${{ secrets.DC_REGISTRY_USER }} -p ${{ secrets.DC_REGISTRY_PASSWORD }}
-            docker pull ${{ secrets.DC_REGISTRY_URL }}/deep-calm-api:test
-            docker pull ${{ secrets.DC_REGISTRY_URL }}/deep-calm-frontend:test
+            docker login ${{ env.REGISTRY_URL }} -u ${{ env.REGISTRY_USER }} -p ${{ env.REGISTRY_PASSWORD }}
+            docker pull ${{ env.REGISTRY_URL }}/deep-calm-api:test
+            docker pull ${{ env.REGISTRY_URL }}/deep-calm-frontend:test
             cd /opt/deep-calm/test
             pg_dump --dbname=postgresql://dc:dcpass@localhost:5432/dc_test --file=/opt/backups/dc_test_$(date +%Y%m%d%H%M%S).sql
             docker compose down

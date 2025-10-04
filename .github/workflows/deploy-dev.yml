@@ -10,10 +10,23 @@ env:
 
 jobs:
   build-and-deploy:
-    if: ${{ secrets.DC_REGISTRY_URL != '' && secrets.DC_DEV_SSH_HOST != '' && secrets.DC_DEV_SSH_KEY != '' }}
     runs-on: ubuntu-latest
+    env:
+      REGISTRY_URL: ${{ secrets.DC_REGISTRY_URL }}
+      REGISTRY_USER: ${{ secrets.DC_REGISTRY_USER }}
+      REGISTRY_PASSWORD: ${{ secrets.DC_REGISTRY_PASSWORD }}
+      DEV_SSH_HOST: ${{ secrets.DC_DEV_SSH_HOST }}
+      DEV_SSH_USER: ${{ secrets.DC_DEV_SSH_USER }}
+      DEV_SSH_KEY: ${{ secrets.DC_DEV_SSH_KEY }}
 
     steps:
+      - name: Ensure required secrets are present
+        run: |
+          if [ -z "$REGISTRY_URL" ] || [ -z "$REGISTRY_USER" ] || [ -z "$REGISTRY_PASSWORD" ] || [ -z "$DEV_SSH_HOST" ] || [ -z "$DEV_SSH_USER" ] || [ -z "$DEV_SSH_KEY" ]; then
+            echo "Missing DC_* secrets. Skipping deploy-dev." >&2
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -23,9 +36,9 @@ jobs:
       - name: Log in to registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ secrets.DC_REGISTRY_URL }}
-          username: ${{ secrets.DC_REGISTRY_USER }}
-          password: ${{ secrets.DC_REGISTRY_PASSWORD }}
+          registry: ${{ env.REGISTRY_URL }}
+          username: ${{ env.REGISTRY_USER }}
+          password: ${{ env.REGISTRY_PASSWORD }}
 
       - name: Build and push API image
         uses: docker/build-push-action@v5
@@ -34,7 +47,7 @@ jobs:
           file: Dockerfile.api
           push: true
           tags: |
-            ${{ secrets.DC_REGISTRY_URL }}/deep-calm-api:dev
+            ${{ env.REGISTRY_URL }}/deep-calm-api:dev
 
       - name: Build and push Frontend image
         uses: docker/build-push-action@v5
@@ -43,18 +56,18 @@ jobs:
           file: Dockerfile.frontend
           push: true
           tags: |
-            ${{ secrets.DC_REGISTRY_URL }}/deep-calm-frontend:dev
+            ${{ env.REGISTRY_URL }}/deep-calm-frontend:dev
 
       - name: Deploy to DEV
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.DC_DEV_SSH_HOST }}
-          username: ${{ secrets.DC_DEV_SSH_USER }}
-          key: ${{ secrets.DC_DEV_SSH_KEY }}
+          host: ${{ env.DEV_SSH_HOST }}
+          username: ${{ env.DEV_SSH_USER }}
+          key: ${{ env.DEV_SSH_KEY }}
           script: |
-            docker login ${{ secrets.DC_REGISTRY_URL }} -u ${{ secrets.DC_REGISTRY_USER }} -p ${{ secrets.DC_REGISTRY_PASSWORD }}
-            docker pull ${{ secrets.DC_REGISTRY_URL }}/deep-calm-api:dev
-            docker pull ${{ secrets.DC_REGISTRY_URL }}/deep-calm-frontend:dev
+            docker login ${{ env.REGISTRY_URL }} -u ${{ env.REGISTRY_USER }} -p ${{ env.REGISTRY_PASSWORD }}
+            docker pull ${{ env.REGISTRY_URL }}/deep-calm-api:dev
+            docker pull ${{ env.REGISTRY_URL }}/deep-calm-frontend:dev
             cd /opt/deep-calm/dev
             docker compose down
             docker compose up -d
