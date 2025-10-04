@@ -77,7 +77,11 @@ jobs:
             docker pull ${{ env.REGISTRY_URL }}/deep-calm-frontend:test
             cd /opt/deep-calm/test
             mkdir -p ../backups
-            docker compose exec -T dc-db pg_dump -U dc dc_test > ../backups/dc_test_$(date +%Y%m%d%H%M%S).sql
+            if [ -n "$(docker compose ps -q dc-db)" ]; then
+              docker compose exec -T dc-db pg_dump -U dc dc_test > ../backups/dc_test_$(date +%Y%m%d%H%M%S).sql
+            else
+              echo "dc-db not running, skipping snapshot"
+            fi
             docker compose down
             docker compose up -d
             for i in $(seq 1 30); do
