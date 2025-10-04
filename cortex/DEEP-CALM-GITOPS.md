@@ -22,6 +22,29 @@
 
 ---
 
+### CI за 5 минут (шпаргалка)
+
+1. **Перед пушем**
+   - бэкенд: `PYTEST_SKIP_DB_FIXTURES=1 pytest` (или `docker compose exec dc-dev-api pytest` если нужен Postgres из стека);
+   - фронтенд: `npm run lint` и `npm run test` из `frontend/`;
+   - убедись, что `dev/env` не попал в git (есть `dev/env.example`).
+2. **Пуш/PR**
+   - `git push` → GitHub автоматически запускает `PR Checks` (на ветки main/develop) и, если пуш в `develop`, дополнительно `Deploy Dev`;
+   - для новых workflow-файлов GitHub требует ручного подтверждения: Actions → ран → кнопка `Enable workflow / Approve and run`.
+3. **Как смотреть статусы**
+   - CLI: `gh run list --limit 5`, `gh run view <run_id> --log`;
+   - Web: вкладка Actions → выбрать ран → вкладка `Annotations` для ошибок.
+4. **Чиним упавший ран**
+   - воспроизводим локально: `npm run build --prefix frontend`, `pytest`, `python scripts/export_openapi.py`;
+   - ошибка в `deploy-dev/test`: проверяем секреты `DC_REGISTRY_*`, `DC_DEV_SSH_*`, `DC_TEST_SSH_*`, флаги `DEPLOY_ENABLED`, `DC_FREEZE`.
+5. **После мержа**
+   - `develop`: убеждаемся, что `Deploy Dev` зелёный, Alembic отработал;
+   - теги `v*`: запускают `Deploy Test`, перед ручным подтверждением проверяем snapshot БД.
+
+> Shortcut: `gh run rerun <run_id>` перезапускает упавший ран после фикса.
+
+---
+
 ## Архитектура GitOps
 
 ```
