@@ -23,16 +23,20 @@ def test_create_campaign_mock_mode(monkeypatch):
 def test_create_campaign_real(monkeypatch):
     captured = {}
 
-    def fake_post(url: str, headers: Dict[str, Any], json: Dict[str, Any], timeout: float):
+    def fake_post(
+        url: str, headers: Dict[str, Any], json: Dict[str, Any], timeout: float
+    ):
         captured["url"] = url
         captured["headers"] = headers
         captured["json"] = json
-        return _FakeResponse(200, {"result": {"AddResults": [{"Id": 987654321}]}} , url)
+        return _FakeResponse(200, {"result": {"AddResults": [{"Id": 987654321}]}}, url)
 
     monkeypatch.setattr("app.integrations.yandex_direct.httpx.post", fake_post)
 
     client = YandexDirectClient(token="token", login="client", sandbox=True)
-    campaign_id = client.create_campaign(title="Demo", body="", image_url="", budget_rub=50)
+    campaign_id = client.create_campaign(
+        title="Demo", body="", image_url="", budget_rub=50
+    )
 
     assert campaign_id == "987654321"
     assert captured["url"] == "https://api-sandbox.direct.yandex.com/json/v5/campaigns"
@@ -44,12 +48,18 @@ def test_create_campaign_real(monkeypatch):
     # Проверяем исправления: корректный расчет бюджета и StartDate
     campaign = captured["json"]["params"]["Campaigns"][0]
     assert campaign["StartDate"] == date.today().strftime("%Y-%m-%d")
-    assert campaign["DailyBudget"]["Amount"] == 300000000  # min(max(50/30, 300), 10000) * 1000000 = 300 * 1000000
+    assert (
+        campaign["DailyBudget"]["Amount"] == 300000000
+    )  # min(max(50/30, 300), 10000) * 1000000 = 300 * 1000000
 
 
 def test_create_campaign_error(monkeypatch):
-    def fake_post(url: str, headers: Dict[str, Any], json: Dict[str, Any], timeout: float):
-        return _FakeResponse(400, {"error": {"error_code": 91, "error_detail": "Bad Request"}}, url)
+    def fake_post(
+        url: str, headers: Dict[str, Any], json: Dict[str, Any], timeout: float
+    ):
+        return _FakeResponse(
+            400, {"error": {"error_code": 91, "error_detail": "Bad Request"}}, url
+        )
 
     monkeypatch.setattr("app.integrations.yandex_direct.httpx.post", fake_post)
 
@@ -71,7 +81,9 @@ def test_budget_calculation_limits(monkeypatch):
     """Тест проверяет правильность расчета бюджета с лимитами"""
     captured = {}
 
-    def fake_post(url: str, headers: Dict[str, Any], json: Dict[str, Any], timeout: float):
+    def fake_post(
+        url: str, headers: Dict[str, Any], json: Dict[str, Any], timeout: float
+    ):
         captured["json"] = json
         return _FakeResponse(200, {"result": {"AddResults": [{"Id": 123}]}}, url)
 

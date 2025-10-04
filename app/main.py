@@ -13,7 +13,7 @@ import structlog
 
 from app.core.config import settings
 from app.core.logging import setup_logging
-# from app.services.scheduler import scheduler  # TODO: Phase 1.5
+from app.services.scheduler import scheduler
 
 
 # Настройка логирования
@@ -43,12 +43,12 @@ async def lifespan(app: FastAPI):
     )
 
     # Запускаем планировщик задач
-    # scheduler.start()  # TODO: Phase 1.5
+    scheduler.start()
 
     yield
 
     # Shutdown
-    # scheduler.stop()  # TODO: Phase 1.5
+    scheduler.stop()
     logger.info("application_shutdown")
 
 
@@ -189,14 +189,13 @@ async def root():
 
 
 # API v1 routers
-from app.api.v1 import analytics, campaigns, creatives, publishing
-# from app.api.v1 import analyst, reports  # TODO: Phase 1.5
-# from app.api.v1 import settings as settings_api  # TODO: Phase 1.5
+from app.api.v1 import analytics, campaigns, creatives, publishing, analyst, reports
+from app.api.v1 import settings as settings_api
 
 app.include_router(campaigns.router, prefix="/api/v1", tags=["campaigns"])
 app.include_router(creatives.router, prefix="/api/v1", tags=["creatives"])
 app.include_router(publishing.router, prefix="/api/v1", tags=["publishing"])
 app.include_router(analytics.router, prefix="/api/v1", tags=["analytics"])
-# app.include_router(settings_api.router, prefix="/api/v1", tags=["settings"])  # TODO: Phase 1.5
-# app.include_router(analyst.router, prefix="/api/v1", tags=["analyst"])  # TODO: Phase 1.5
-# app.include_router(reports.router, prefix="/api/v1", tags=["reports"])  # TODO: Phase 1.5
+app.include_router(settings_api.router, prefix="/api/v1", tags=["settings"])
+app.include_router(analyst.router, prefix="/api/v1", tags=["analyst"])
+app.include_router(reports.router, prefix="/api/v1", tags=["reports"])

@@ -83,9 +83,7 @@ jobs:
         run: python scripts/export_openapi.py
 
       - name: Ensure OpenAPI schema committed
-        run: |
-          echo "Temporarily disabled for Yandex.Direct integration PR"
-          # git diff --exit-code cortex/APIs/openapi.json
+        run: git diff --exit-code cortex/APIs/openapi.json
 
       - name: Upload coverage (optional)
         if: false

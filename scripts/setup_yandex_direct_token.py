@@ -65,7 +65,9 @@ def request_token(client_id: str, client_secret: str, auth_code: str) -> Dict[st
         )
     payload = response.json()
     if "access_token" not in payload:
-        raise RuntimeError(f"В ответе нет access_token: {json.dumps(payload, ensure_ascii=False)}")
+        raise RuntimeError(
+            f"В ответе нет access_token: {json.dumps(payload, ensure_ascii=False)}"
+        )
     return payload
 
 
@@ -136,12 +138,16 @@ def main() -> None:
     update_env_file(DEV_ENV_PATH, updates)
     print(f"Файл {DEV_ENV_PATH} обновлён.")
 
+    print("\nДальше:")
     print(
-        "\nДальше:")
-    print("  1) Перезапусти API-контейнер: cd /opt/deep-calm/dev && docker compose up -d --force-recreate dc-api")
-    print("  2) Проверь подключение: docker compose exec dc-api env | grep DC_YANDEX_DIRECT")
+        "  1) Перезапусти API-контейнер: cd /opt/deep-calm/dev && docker compose up -d --force-recreate dc-api"
+    )
     print(
-        "  3) Прогоняй health-скрипт или публикацию — теперь клиент должен работать в sandbox."  )
+        "  2) Проверь подключение: docker compose exec dc-api env | grep DC_YANDEX_DIRECT"
+    )
+    print(
+        "  3) Прогоняй health-скрипт или публикацию — теперь клиент должен работать в sandbox."
+    )
 
 
 if __name__ == "__main__":
