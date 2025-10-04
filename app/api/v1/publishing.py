@@ -15,6 +15,8 @@ from app.schemas.publishing import (
     PublishRequest,
     PublishResponse,
 )
+from app.core.config import settings
+from app.integrations.yandex_direct import YandexDirectClient
 from app.services.publishing_service import PublishingService
 
 logger = structlog.get_logger()
@@ -181,4 +183,77 @@ def pause_campaign(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Ошибка при приостановке кампании"
+        )
+
+
+@router.get("/health/yandex-direct")
+def check_yandex_direct_health():
+    """
+    Проверяет подключение к API Яндекс.Директ
+
+    Возвращает статус подключения и количество доступных кампаний
+    """
+    logger.info("yandex_direct_health_check_request")
+
+    try:
+        client = YandexDirectClient(
+            token=settings.yandex_direct_token or None,
+            login=settings.yandex_direct_login or None,
+            sandbox=not settings.is_prod,
+        )
+
+        health_status = client.health_check()
+
+        logger.info(
+            "yandex_direct_health_check_success",
+            status=health_status["status"],
+            role=health_status.get("role"),
+            campaigns_count=health_status.get("campaigns_count", 0)
+        )
+
+        return health_status
+
+    except Exception as e:
+        logger.error("yandex_direct_health_check_error", error=str(e))
+        return {
+            "status": "error",
+            "message": f"Ошибка проверки подключения: {str(e)}"
+        }
+
+
+@router.get("/campaigns/yandex-direct")
+def list_yandex_direct_campaigns():
+    """
+    Получает список кампаний из Яндекс.Директ
+
+    Показывает текущие кампании в аккаунте (или mock данные)
+    """
+    logger.info("yandex_direct_campaigns_list_request")
+
+    try:
+        client = YandexDirectClient(
+            token=settings.yandex_direct_token or None,
+            login=settings.yandex_direct_login or None,
+            sandbox=not settings.is_prod,
+        )
+
+        campaigns = client.get_campaigns()
+
+        logger.info(
+            "yandex_direct_campaigns_listed",
+            count=len(campaigns)
+        )
+
+        return {
+            "campaigns": campaigns,
+            "count": len(campaigns),
+            "sandbox": not settings.is_prod,
+            "role": "agency" if settings.yandex_direct_login else "client"
+        }
+
+    except Exception as e:
+        logger.error("yandex_direct_campaigns_list_error", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ошибка получения списка кампаний: {str(e)}"
         )

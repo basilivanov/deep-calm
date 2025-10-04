@@ -61,9 +61,19 @@ class Settings(BaseSettings):
     vk_app_secret: str = ""
     vk_access_token: str = ""
 
-    # Яндекс.Директ
-    yandex_direct_token: str = ""
-    yandex_direct_login: str = ""
+    # Яндекс.Директ (с префиксом DC_)
+    dc_yandex_direct_token: str = ""
+    dc_yandex_direct_login: str = ""
+
+    @property
+    def yandex_direct_token(self) -> str:
+        """Токен Яндекс.Директ (backward compatibility)"""
+        return self.dc_yandex_direct_token
+
+    @property
+    def yandex_direct_login(self) -> str:
+        """Логин Яндекс.Директ (backward compatibility)"""
+        return self.dc_yandex_direct_login
 
     # Avito
     avito_client_id: str = ""

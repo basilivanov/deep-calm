@@ -98,7 +98,9 @@ class PublishingService:
                         campaign_id=str(campaign_id),
                         creative_id=str(creative.id),
                         channel=channel,
-                        error=str(e)
+                        error=str(e),
+                        error_type=type(e).__name__,
+                        exc_info=True
                     )
 
         self.db.commit()
@@ -133,8 +135,18 @@ class PublishingService:
         Returns:
             Созданный Placement
         """
+        logger.info(
+            "publishing_to_channel_started",
+            campaign_id=str(campaign.id),
+            creative_id=str(creative.id),
+            channel=channel,
+            creative_title=creative.title,
+            budget=campaign.budget_rub
+        )
+
         # Выбираем клиент в зависимости от канала
         if channel == "vk":
+            logger.info("using_vk_client")
             external_id = self.vk_client.create_campaign(
                 title=creative.title,
                 body=creative.body,
@@ -142,6 +154,7 @@ class PublishingService:
                 budget_rub=campaign.budget_rub
             )
         elif channel == "direct":
+            logger.info("using_yandex_direct_client", token_exists=bool(self.direct_client.token))
             external_id = self.direct_client.create_campaign(
                 title=creative.title,
                 body=creative.body,
@@ -149,6 +162,7 @@ class PublishingService:
                 budget_rub=campaign.budget_rub
             )
         elif channel == "avito":
+            logger.info("using_avito_client")
             external_id = self.avito_client.create_ad(
                 title=creative.title,
                 body=creative.body,
@@ -156,6 +170,12 @@ class PublishingService:
             )
         else:
             raise ValueError(f"Неизвестный канал: {channel}")
+
+        logger.info(
+            "external_campaign_created",
+            channel=channel,
+            external_id=external_id
+        )
 
         # Создаем запись о размещении
         placement = Placement(
