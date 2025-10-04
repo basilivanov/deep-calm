@@ -167,7 +167,7 @@ export function Integrations() {
               <div>
                 <p className="text-sm text-dc-neutral-600">Подключено</p>
                 <p className="text-2xl font-bold text-dc-success-600">
-                  {integrations.filter(i => i.status === 'connected').length}
+                  {integrations.filter((i: Integration) => i.status === 'connected').length}
                 </p>
               </div>
               <CheckCircle className="w-8 h-8 text-dc-success-400" />
@@ -181,7 +181,7 @@ export function Integrations() {
               <div>
                 <p className="text-sm text-dc-neutral-600">Ошибки</p>
                 <p className="text-2xl font-bold text-dc-danger-600">
-                  {integrations.filter(i => i.status === 'error').length}
+                  {integrations.filter((i: Integration) => i.status === 'error').length}
                 </p>
               </div>
               <AlertCircle className="w-8 h-8 text-dc-danger-400" />
@@ -195,7 +195,7 @@ export function Integrations() {
               <div>
                 <p className="text-sm text-dc-neutral-600">Активных каналов</p>
                 <p className="text-2xl font-bold text-dc-accent-600">
-                  {integrations.filter(i => ['vk', 'direct', 'avito'].includes(i.type) && i.status === 'connected').length}
+                  {integrations.filter((i: Integration) => ['vk', 'direct', 'avito'].includes(i.type) && i.status === 'connected').length}
                 </p>
               </div>
               <ExternalLink className="w-8 h-8 text-dc-accent-400" />
@@ -206,7 +206,7 @@ export function Integrations() {
 
       {/* Integrations Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {integrations.map((integration) => (
+        {integrations.map((integration: Integration) => (
           <Card key={integration.id} className="relative">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
@@ -319,7 +319,7 @@ export function Integrations() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Shield className="w-5 h-5" />
-                  Подключение {integrations.find(i => i.type === showTokenForm)?.name}
+                  Подключение {integrations.find((i: Integration) => i.type === showTokenForm)?.name}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
