@@ -16,8 +16,8 @@ jobs:
         image: postgres:16
         env:
           POSTGRES_DB: dc_ci
-          POSTGRES_USER: dc
-          POSTGRES_PASSWORD: dcpass
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
         options: >-
@@ -70,15 +70,15 @@ jobs:
 
       - name: Run backend tests
         env:
-          DC_DATABASE_URL: postgresql://dc:dcpass@localhost:5432/dc_ci
-          DATABASE_URL: postgresql://dc:dcpass@localhost:5432/dc_ci
+          DC_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/dc_ci
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/dc_ci
           DC_REDIS_URL: redis://localhost:6379/0
         run: pytest
 
       - name: Export OpenAPI schema
         env:
-          DC_DATABASE_URL: postgresql://dc:dcpass@localhost:5432/dc_ci
-          DATABASE_URL: postgresql://dc:dcpass@localhost:5432/dc_ci
+          DC_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/dc_ci
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/dc_ci
           DC_REDIS_URL: redis://localhost:6379/0
         run: python scripts/export_openapi.py
 
