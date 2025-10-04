@@ -158,7 +158,7 @@ describe('AIAnalyst', () => {
       generated_at: '2024-01-01T12:00:00Z',
     };
 
-    mockFetch.mockImplementation((url: string, options?: any) => {
+    mockFetch.mockImplementation((url: string, options?: RequestInit) => {
       if (url === '/api/v1/campaigns') {
         return Promise.resolve({
           ok: true,
