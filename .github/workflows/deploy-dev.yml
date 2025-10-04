@@ -59,4 +59,3 @@ jobs:
             docker compose down
             docker compose up -d
             docker compose exec dc-dev-api alembic upgrade head
-*** End Patch
