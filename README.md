@@ -207,6 +207,8 @@ cd /opt/deep-calm
 ./scripts/setup_yandex_direct_token.py   # можно оставить Client-Login пустым
 # После git push обязательно зайди на вкладку Actions в GitHub и убедись, что последний workflow зелёный.
 # Если job упал — смотри лог, исправляй, коммить и push заново.
+# Стандартный поток: ветку создаём от develop → PR в develop (прогоняются pr-checks)
+# → после merge авто-катится deploy-dev → для test ставим тег v* и пушим (deploy-test).
 ```
 
 > ⚙️  Фикстуры автоматически создают БД `dc_test` в контейнере `dc-dev-db`. Если хочется подключиться к другому инстансу Postgres, задай `TEST_DATABASE_URL` перед запуском pytest.
