@@ -80,12 +80,16 @@ jobs:
             cd /opt/deep-calm/test
             mkdir -p ../backups
             if [ -n "$(docker compose ps -q dc-db)" ]; then
-              docker compose exec -T dc-db pg_dump -U dc dc_test > ../backups/dc_test_$(date +%Y%m%d%H%M%S).sql
+              if docker compose exec -T -e PGPASSWORD=dcpass dc-db pg_isready -h localhost -U dc -d dc_test >/dev/null 2>&1; then
+                docker compose exec -T dc-db pg_dump -U dc dc_test > ../backups/dc_test_$(date +%Y%m%d%H%M%S).sql
+              else
+                echo "dc-db present but not ready, snapshot skipped"
+              fi
             else
               echo "dc-db not running, skipping snapshot"
             fi
             docker compose down
-            docker compose up -d
+            docker compose up -d dc-db dc-redis
             for i in $(seq 1 30); do
               if docker compose exec -T -e PGPASSWORD=dcpass dc-db pg_isready -h localhost -U dc -d dc_test >/dev/null 2>&1; then
                 echo "dc-db is accepting connections"
@@ -98,6 +102,8 @@ jobs:
               echo "Waiting for dc-db to become ready ($i/30)..."
               sleep 5
             done
+            docker compose run --rm dc-migrate
+            docker compose up -d
             for i in $(seq 1 30); do
               status=$(docker inspect -f '{{.State.Status}}' dc-test-api 2>/dev/null || true)
               health=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' dc-test-api 2>/dev/null || true)
