@@ -76,8 +76,8 @@ jobs:
             docker pull ${{ env.REGISTRY_URL }}/deep-calm-api:test
             docker pull ${{ env.REGISTRY_URL }}/deep-calm-frontend:test
             cd /opt/deep-calm/test
-            mkdir -p /opt/backups
-            docker compose exec -T dc-db pg_dump -U dc dc_test > /opt/backups/dc_test_$(date +%Y%m%d%H%M%S).sql
+            mkdir -p ../backups
+            docker compose exec -T dc-db pg_dump -U dc dc_test > ../backups/dc_test_$(date +%Y%m%d%H%M%S).sql
             docker compose down
             docker compose up -d
             for i in $(seq 1 30); do
