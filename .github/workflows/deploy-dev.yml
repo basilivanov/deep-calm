@@ -73,6 +73,8 @@ jobs:
             docker login ${{ env.REGISTRY_URL }} -u ${{ env.REGISTRY_USER }} -p ${{ env.REGISTRY_PASSWORD }}
             docker pull ${{ env.REGISTRY_URL }}/deep-calm-api:dev
             docker pull ${{ env.REGISTRY_URL }}/deep-calm-frontend:dev
+            docker tag ${{ env.REGISTRY_URL }}/deep-calm-api:dev deep-calm-api:dev
+            docker tag ${{ env.REGISTRY_URL }}/deep-calm-frontend:dev deep-calm-frontend:dev
             cd /opt/deep-calm/dev
             docker compose down
             docker compose up -d

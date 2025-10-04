@@ -75,6 +75,8 @@ jobs:
             docker login ${{ env.REGISTRY_URL }} -u ${{ env.REGISTRY_USER }} -p ${{ env.REGISTRY_PASSWORD }}
             docker pull ${{ env.REGISTRY_URL }}/deep-calm-api:test
             docker pull ${{ env.REGISTRY_URL }}/deep-calm-frontend:test
+            docker tag ${{ env.REGISTRY_URL }}/deep-calm-api:test deep-calm-api:test
+            docker tag ${{ env.REGISTRY_URL }}/deep-calm-frontend:test deep-calm-frontend:test
             cd /opt/deep-calm/test
             mkdir -p ../backups
             if [ -n "$(docker compose ps -q dc-db)" ]; then
