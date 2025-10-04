@@ -17,6 +17,8 @@
 - **Deploy jobs**: `deploy-dev` / `deploy-test` обязательно выполняют `alembic upgrade head` и проверяют `DEPLOY_ENABLED`; перед TEST‑миграциями делается snapshot БД.
 - **Стоп‑краны**: переменная `DEPLOY_ENABLED=0` блокирует все деплои; middleware читает `DC_FREEZE` и переводит API в read‑only.
 - **Cleanup**: после merge/close PR удаляем `/var/www/dc/previews/pr-<id>/` и эпемерные docker‑проекты.
+- **Поток веток**: ветки создаём от `develop` → PR в `develop` (прогон `pr-checks.yml`) → merge (авто `deploy-dev`) → тег `v*` (`deploy-test`). `master`/`main` обновляется только из `develop` после успешного цикла, прямых коммитов нет.
+- **Мониторинг Actions**: любой `git push` → сразу проверяем GitHub Actions; job упал — исправляем, коммитим и пушим заново, пока всё не зелёное.
 
 ---
 

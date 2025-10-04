@@ -11,13 +11,18 @@ env:
 jobs:
   lint-test-build:
     runs-on: ubuntu-latest
+    env:
+      DC_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/dc_ci
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/dc_ci
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/dc_ci
+      DC_REDIS_URL: redis://localhost:6379/0
     services:
       postgres:
         image: postgres:16
         env:
           POSTGRES_DB: dc_ci
-          POSTGRES_USER: dc
-          POSTGRES_PASSWORD: dcpass
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
         options: >-
@@ -69,22 +74,13 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run backend tests
-        env:
-          DC_DATABASE_URL: postgresql://dc:dcpass@localhost:5432/dc_ci
-          DATABASE_URL: postgresql://dc:dcpass@localhost:5432/dc_ci
-          DC_REDIS_URL: redis://localhost:6379/0
         run: pytest
 
       - name: Export OpenAPI schema
-        env:
-          DC_DATABASE_URL: postgresql://dc:dcpass@localhost:5432/dc_ci
-          DATABASE_URL: postgresql://dc:dcpass@localhost:5432/dc_ci
-          DC_REDIS_URL: redis://localhost:6379/0
         run: python scripts/export_openapi.py
 
       - name: Ensure OpenAPI schema committed
-        run: |
-          git diff --exit-code cortex/APIs/openapi.json
+        run: git diff --exit-code cortex/APIs/openapi.json
 
       - name: Upload coverage (optional)
         if: false

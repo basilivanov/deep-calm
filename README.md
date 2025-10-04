@@ -254,6 +254,33 @@ docker compose down
 docker compose up -d
 ```
 
+### Git/CI пайплайн (обязателен для всех)
+
+1. **Ветки только от `develop`:**
+   ```bash
+   git checkout develop
+   git pull
+   git checkout -b feature/<task>
+   ```
+2. **Коммит → push → PR в `develop`:**
+   ```bash
+   git add ...
+   git commit -m "..."
+   git push -u origin feature/<task>
+   ```
+   Открываем Pull Request в `develop` — запуск `.github/workflows/pr-checks.yml` (lint, vitest, pytest, openapi-diff).
+3. **Merge в `develop`:**
+   После зелёных проверок мержим PR. Автоматически стартует `.github/workflows/deploy-dev.yml`, обновляющий DEV. Проверяем вкладку **Actions**.
+4. **TEST релиз:**
+   ```bash
+   git tag v1.2.0
+   git push origin v1.2.0
+   ```
+   Это включает `.github/workflows/deploy-test.yml`. Пока job не зелёный — релиз не засчитан.
+5. **`master`/`main`:** обновляем только из `develop` после успешного цикла (Release PR). Прямые коммиты запрещены.
+
+Любой `git push` → сразу в GitHub Actions. Упал — разбираем лог, правим, пушим снова, пока всё не зелёное.
+
 ---
 
 ## 📡 API Endpoints

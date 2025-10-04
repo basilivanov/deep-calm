@@ -105,6 +105,7 @@ temp/
 
 # Docker (локальные данные)
 docker-compose.override.yml
+dev/env
 
 # Alembic (исключаем сгенерированные миграции - НЕТ! Их нужно коммитить)
 # alembic/versions/*.pyc
