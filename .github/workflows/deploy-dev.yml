@@ -90,4 +90,4 @@ jobs:
               echo "Waiting for dc-dev-api to become ready ($i/30)..."
               sleep 5
             done
-            docker compose exec dc-dev-api alembic upgrade head
+            docker compose exec dc-api alembic upgrade head

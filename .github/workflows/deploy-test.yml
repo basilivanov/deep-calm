@@ -93,4 +93,4 @@ jobs:
               echo "Waiting for dc-test-api to become ready ($i/30)..."
               sleep 5
             done
-            docker compose exec dc-test-api alembic upgrade head
+            docker compose exec dc-api alembic upgrade head
