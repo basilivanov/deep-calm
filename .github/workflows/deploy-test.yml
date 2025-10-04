@@ -71,6 +71,7 @@ jobs:
           username: ${{ env.TEST_SSH_USER }}
           key: ${{ env.TEST_SSH_KEY }}
           script: |
+            set -euo pipefail
             docker login ${{ env.REGISTRY_URL }} -u ${{ env.REGISTRY_USER }} -p ${{ env.REGISTRY_PASSWORD }}
             docker pull ${{ env.REGISTRY_URL }}/deep-calm-api:test
             docker pull ${{ env.REGISTRY_URL }}/deep-calm-frontend:test
@@ -78,4 +79,18 @@ jobs:
             pg_dump --dbname=postgresql://dc:dcpass@localhost:5432/dc_test --file=/opt/backups/dc_test_$(date +%Y%m%d%H%M%S).sql
             docker compose down
             docker compose up -d
+            for i in $(seq 1 30); do
+              status=$(docker inspect -f '{{.State.Status}}' dc-test-api 2>/dev/null || true)
+              health=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' dc-test-api 2>/dev/null || true)
+              if [ "$status" = "running" ] && { [ "$health" = "healthy" ] || [ "$health" = "none" ] || [ "$health" = "starting" ]; }; then
+                echo "dc-test-api is $status (health: $health)"
+                break
+              fi
+              if [ "$i" -eq 30 ]; then
+                echo "dc-test-api did not become ready" >&2
+                exit 1
+              fi
+              echo "Waiting for dc-test-api to become ready ($i/30)..."
+              sleep 5
+            done
             docker compose exec dc-test-api alembic upgrade head
