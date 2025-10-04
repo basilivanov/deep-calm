@@ -17,6 +17,7 @@
 - **Deploy jobs**: `deploy-dev` / `deploy-test` обязательно выполняют `alembic upgrade head` и проверяют `DEPLOY_ENABLED`; перед TEST‑миграциями делается snapshot БД.
 - **Стоп‑краны**: переменная `DEPLOY_ENABLED=0` блокирует все деплои; middleware читает `DC_FREEZE` и переводит API в read‑only.
 - **Cleanup**: после merge/close PR удаляем `/var/www/dc/previews/pr-<id>/` и эпемерные docker‑проекты.
+- **Наблюдение за CI**: после каждого `git push` разработчик (или LLM) обязан проверить вкладку GitHub Actions — пока последний workflow не зелёный, изменения считаются неготовыми.
 
 ---
 
