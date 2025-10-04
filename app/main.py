@@ -189,13 +189,14 @@ async def root():
 
 
 # API v1 routers
-from app.api.v1 import analytics, campaigns, creatives, publishing, analyst, reports
-from app.api.v1 import settings as settings_api
+from app.api.v1 import analytics, campaigns, creatives, publishing
+# from app.api.v1 import analyst, reports  # TODO: Phase 1.5
+# from app.api.v1 import settings as settings_api  # TODO: Phase 1.5
 
 app.include_router(campaigns.router, prefix="/api/v1", tags=["campaigns"])
 app.include_router(creatives.router, prefix="/api/v1", tags=["creatives"])
 app.include_router(publishing.router, prefix="/api/v1", tags=["publishing"])
 app.include_router(analytics.router, prefix="/api/v1", tags=["analytics"])
-app.include_router(settings_api.router, prefix="/api/v1", tags=["settings"])
-app.include_router(analyst.router, prefix="/api/v1", tags=["analyst"])
-app.include_router(reports.router, prefix="/api/v1", tags=["reports"])
+# app.include_router(settings_api.router, prefix="/api/v1", tags=["settings"])  # TODO: Phase 1.5
+# app.include_router(analyst.router, prefix="/api/v1", tags=["analyst"])  # TODO: Phase 1.5
+# app.include_router(reports.router, prefix="/api/v1", tags=["reports"])  # TODO: Phase 1.5
