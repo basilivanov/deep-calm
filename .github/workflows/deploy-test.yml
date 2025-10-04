@@ -87,7 +87,7 @@ jobs:
             docker compose down
             docker compose up -d
             for i in $(seq 1 30); do
-              if docker compose exec -T dc-db pg_isready -U dc -d dc_test >/dev/null 2>&1; then
+              if docker compose exec -T -e PGPASSWORD=dcpass dc-db pg_isready -U dc -d dc_test >/dev/null 2>&1; then
                 echo "dc-db is accepting connections"
                 break
               fi
