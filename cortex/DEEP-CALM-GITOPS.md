@@ -15,6 +15,9 @@
 - **PR Checks**: lint/test FE, pytest BE, генерация `openapi.json`, `openapi-diff` против базовой ветки, публикация превью на `https://pr-<id>.dev.dc…`.
 - **Fast path FE-only**: если изменён только `frontend/**` и `openapi-diff == 0`, деплой только фронта на DEV без рестарта API и миграций.
 - **Deploy jobs**: `deploy-dev` / `deploy-test` обязательно выполняют `alembic upgrade head` и проверяют `DEPLOY_ENABLED`; перед TEST‑миграциями делается snapshot БД.
+  - Dev: `docker compose up -d` → ожидание `dc-db`/`dc-dev-api` → `docker compose exec -T dc-api alembic upgrade head`.
+  - Test: `docker compose up -d dc-db dc-redis` → `docker compose run --rm dc-migrate` → `docker compose up -d` → ожидание `dc-test-api` → `docker compose exec -T dc-api alembic upgrade head`.
+  - Snapshot TEST выполняется через `docker compose exec -T dc-db pg_dump`, пропускается если БД или контейнер не готовы.
 - **Стоп‑краны**: переменная `DEPLOY_ENABLED=0` блокирует все деплои; middleware читает `DC_FREEZE` и переводит API в read‑only.
 - **Cleanup**: после merge/close PR удаляем `/var/www/dc/previews/pr-<id>/` и эпемерные docker‑проекты.
 - **Поток веток**: ветки создаём от `develop` → PR в `develop` (прогон `pr-checks.yml`) → merge (авто `deploy-dev`) → тег `v*` (`deploy-test`). `master`/`main` обновляется только из `develop` после успешного цикла, прямых коммитов нет.
