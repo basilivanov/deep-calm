@@ -13,7 +13,7 @@ import structlog
 
 from app.core.config import settings
 from app.core.logging import setup_logging
-from app.services.scheduler import scheduler
+# from app.services.scheduler import scheduler  # TODO: Phase 1.5
 
 
 # Настройка логирования
@@ -43,12 +43,12 @@ async def lifespan(app: FastAPI):
     )
 
     # Запускаем планировщик задач
-    scheduler.start()
+    # scheduler.start()  # TODO: Phase 1.5
 
     yield
 
     # Shutdown
-    scheduler.stop()
+    # scheduler.stop()  # TODO: Phase 1.5
     logger.info("application_shutdown")
 
 
