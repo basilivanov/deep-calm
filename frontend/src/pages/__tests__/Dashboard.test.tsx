@@ -1,49 +1,80 @@
-import { render, screen } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { vi } from 'vitest';
-
+import { render, screen, waitFor } from '@testing-library/react';
 import { Dashboard } from '../Dashboard';
-
-const mockSummary = {
-  total_campaigns: 3,
-  active_campaigns: 2,
-  paused_campaigns: 1,
-  total_budget_rub: 150000,
-  total_spent_rub: 90000,
-  budget_utilization: 60,
-  total_leads: 120,
-  total_conversions: 40,
-  total_revenue_rub: 360000,
-  avg_cac_rub: 750,
-  avg_roas: 4.0,
-  top_performing_campaign: {
-    campaign_id: '123',
-    campaign_title: 'Лучший результат',
-    roas: 5.2,
-  },
-};
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../api/client', () => ({
   analyticsApi: {
-    dashboard: vi.fn(() => Promise.resolve({ data: mockSummary })),
+    dashboard: vi.fn(),
   },
 }));
 
+import { analyticsApi } from '../../api/client';
+
+const renderWithClient = (ui: ReactElement) => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+        gcTime: Infinity,
+      },
+    },
+  });
+
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+};
+
+const mockDashboard = analyticsApi.dashboard as unknown as vi.Mock;
+
+afterEach(() => {
+  mockDashboard.mockReset();
+});
+
 describe('Dashboard', () => {
-  it('отображает ключевые метрики из API', async () => {
-    const client = new QueryClient();
+  it('показывает основные метрики из API', async () => {
+    mockDashboard.mockResolvedValueOnce({
+      data: {
+        total_campaigns: 12,
+        active_campaigns: 8,
+        paused_campaigns: 4,
+        total_budget_rub: 200000,
+        total_spent_rub: 120000,
+        budget_utilization: 60,
+        total_leads: 320,
+        total_conversions: 48,
+        total_revenue_rub: 450000,
+        avg_cac_rub: 375,
+        avg_roas: 3.75,
+        top_performing_campaign: {
+          campaign_id: 'vk-123',
+          campaign_title: 'VK Retargeting',
+          roas: 4.2,
+        },
+      },
+    });
 
-    render(
-      <QueryClientProvider client={client}>
-        <Dashboard />
-      </QueryClientProvider>
-    );
+    renderWithClient(<Dashboard />);
 
-    expect(await screen.findByText('Dashboard')).toBeInTheDocument();
-    expect(screen.getByText('3')).toBeInTheDocument();
-    expect(screen.getByText('2 активных, 1 на паузе')).toBeInTheDocument();
-    expect(screen.getByText(/90.*₽/)).toBeInTheDocument();
-    expect(screen.getByText('120 / 40')).toBeInTheDocument();
-    expect(screen.getByText(/Лучший результат/)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Всего кампаний')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('8 активных, 4 на паузе')).toBeInTheDocument();
+    expect(screen.getByText('Бюджет / Расход')).toBeInTheDocument();
+    expect(screen.getByText('320 / 48')).toBeInTheDocument();
+    expect(screen.getByText('Выручка')).toBeInTheDocument();
+    expect(screen.getByText(/ROAS: 3\.75/)).toBeInTheDocument();
+    expect(screen.getByText(/VK Retargeting/)).toBeInTheDocument();
+  });
+
+  it('показывает сообщение о пустых данных', async () => {
+    mockDashboard.mockResolvedValueOnce({ data: null });
+
+    renderWithClient(<Dashboard />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Нет данных')).toBeInTheDocument();
+    });
   });
 });

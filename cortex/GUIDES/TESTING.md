@@ -42,6 +42,10 @@ def test_calculate_cac_negative_spend():
 
 **Где:** `tests/integration/test_*.py`
 
+**Подключение к БД:** фикстуры по умолчанию используют `postgresql://dc:dcpass@dc-dev-db:5432/dc_test` —
+это внутренний host из `dev/docker-compose.yml`. Подними dev-стек (`cd /opt/deep-calm/dev && docker compose up -d`) и запускай тесты внутри API-контейнера: 
+`docker compose exec dc-api pytest tests/integration/test_settings_api.py`. При необходимости можно переопределить `TEST_DATABASE_URL`, например для хостовой БД: `TEST_DATABASE_URL=postgresql://dc:dcpass@localhost:5432/deep_calm_test PYTHONPATH=. pytest …`.
+
 **Пример:**
 ```python
 # tests/integration/test_campaigns_api.py
@@ -144,26 +148,58 @@ test('Dashboard показывает CAC график', async ({ page }) => {
 
 ### 6. Frontend (Vitest + Testing Library)
 
-Для UI компонетов используется Vitest с jsdom-окружением.
+Для UI компонентов используется Vitest с jsdom-окружением.
 
-**Где:** `frontend/src/**/__tests__/*.test.tsx`
+**Где:**
+- `frontend/src/components/__tests__/AIChat.test.tsx` — сценарии общения с ассистентом + мок `fetch`
+- `frontend/src/components/__tests__/MetricCard.test.tsx` — отрисовка KPI и трендов
+- `frontend/src/pages/__tests__/Dashboard.test.tsx` — загрузка метрик из `analyticsApi`
+- `frontend/src/pages/__tests__/AIAnalyst.test.tsx` — подстановки данных кампаний и проверка health-статуса
 
 **Запуск:**
 ```bash
 cd /opt/deep-calm/frontend
-npm run test
+npm run test          # одноразовый прогон всех юнит-тестов
+npm run test -- --watch # режим разработчика с авто-перезапуском
 ```
 
-**Пример:**
+**Пример (Dashboard):**
 ```tsx
-// frontend/src/components/__tests__/MetricCard.test.tsx
-import { render, screen } from '@testing-library/react';
-import { MetricCard } from '../MetricCard';
+// frontend/src/pages/__tests__/Dashboard.test.tsx
+vi.mock('../../api/client', () => ({
+  analyticsApi: { dashboard: vi.fn() },
+}));
 
-test('карточка отображает заголовок и значение', () => {
-  render(<MetricCard title="Выручка" value="100 ₽" />);
-  expect(screen.getByText('Выручка')).toBeInTheDocument();
-  expect(screen.getByText('100 ₽')).toBeInTheDocument();
+mockDashboard.mockResolvedValueOnce({
+  data: {
+    total_campaigns: 12,
+    active_campaigns: 8,
+    paused_campaigns: 4,
+    avg_roas: 3.75,
+    /* ... */
+  },
+});
+
+await waitFor(() => {
+  expect(screen.getByText('8 активных, 4 на паузе')).toBeInTheDocument();
+  expect(screen.getByText(/ROAS: 3\.75/)).toBeInTheDocument();
+});
+```
+
+**Пример (AI Analyst health-check):**
+```tsx
+fetchMock
+  .mockResolvedValueOnce({
+    ok: true,
+    json: async () => ({ items: [{ id: 1, title: 'VK Massage', status: 'active', sku: 'RELAX-60' }] }),
+  })
+  .mockResolvedValueOnce({
+    ok: true,
+    json: async () => ({ status: 'ok', message: 'Готов к анализу' }),
+  });
+
+await waitFor(() => {
+  expect(screen.getByText('Готов к анализу')).toBeInTheDocument();
 });
 ```
 
@@ -219,6 +255,8 @@ def seed_campaigns(db_session):
     db_session.commit()
     return campaigns_data
 ```
+
+> В актуальной версии `tests/conftest.py` перед созданием engine вызывается `ensure_test_database`, чтобы автоматически создать БД `dc_test` внутри compose-стека.
 
 ## Seed Data (фейковые данные)
 

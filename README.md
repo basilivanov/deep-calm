@@ -24,6 +24,7 @@ Performance-маркетинг автопилот для массажного к
 - **Typography** — Inter (400, 600) из Google Fonts
 - **React Query** — кеширование и автообновление данных (30 сек)
 - **Recharts** — графики CAC и CR (в разработке)
+- **Tests** — Vitest + Testing Library (Dashboard, AI Analyst, AI Chat)
 
 ### ✅ Инфраструктура (Docker)
 - **PostgreSQL 16** — база данных (контейнер: `dc-dev-db`, internal)
@@ -192,7 +193,21 @@ docker compose exec dc-api pytest --cov=app --cov-report=term-missing
 
 # Конкретный тест
 docker compose exec dc-api pytest tests/integration/test_campaigns_api.py -v
+
+# Frontend (Vitest)
+cd /opt/deep-calm/frontend
+npm run test
+
+# Проверка: секреты Яндекс.Директа доступны в контейнере API
+cd /opt/deep-calm/dev
+docker compose exec dc-api env | grep DC_YANDEX_DIRECT
+
+# Получить новый OAuth токен для Яндекс.Директа (sandbox)
+cd /opt/deep-calm
+./scripts/setup_yandex_direct_token.py   # можно оставить Client-Login пустым
 ```
+
+> ⚙️  Фикстуры автоматически создают БД `dc_test` в контейнере `dc-dev-db`. Если хочется подключиться к другому инстансу Postgres, задай `TEST_DATABASE_URL` перед запуском pytest.
 
 ### Работа с миграциями
 

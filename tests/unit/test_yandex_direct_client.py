@@ -1,4 +1,5 @@
 import json
+from datetime import date
 from typing import Any, Dict
 
 import httpx
@@ -40,6 +41,11 @@ def test_create_campaign_real(monkeypatch):
     assert captured["headers"]["Authorization"] == "Bearer token"
     assert captured["headers"]["Client-Login"] == "client"
 
+    # Проверяем исправления: корректный расчет бюджета и StartDate
+    campaign = captured["json"]["params"]["Campaigns"][0]
+    assert campaign["StartDate"] == date.today().strftime("%Y-%m-%d")
+    assert campaign["DailyBudget"]["Amount"] == 300000000  # min(max(50/30, 300), 10000) * 1000000 = 300 * 1000000
+
 
 def test_create_campaign_error(monkeypatch):
     def fake_post(url: str, headers: Dict[str, Any], json: Dict[str, Any], timeout: float):
@@ -59,3 +65,30 @@ def test_pause_resume_mock():
     client = YandexDirectClient(token=None, login=None)
     assert client.pause_campaign("123") == {"status": "paused"}
     assert client.resume_campaign("123") == {"status": "active"}
+
+
+def test_budget_calculation_limits(monkeypatch):
+    """Тест проверяет правильность расчета бюджета с лимитами"""
+    captured = {}
+
+    def fake_post(url: str, headers: Dict[str, Any], json: Dict[str, Any], timeout: float):
+        captured["json"] = json
+        return _FakeResponse(200, {"result": {"AddResults": [{"Id": 123}]}}, url)
+
+    monkeypatch.setattr("app.integrations.yandex_direct.httpx.post", fake_post)
+    client = YandexDirectClient(token="token", sandbox=True)
+
+    # Маленький бюджет: 50 руб -> daily = max(50/30, 300) = 300
+    client.create_campaign(title="Small", body="", image_url="", budget_rub=50)
+    campaign = captured["json"]["params"]["Campaigns"][0]
+    assert campaign["DailyBudget"]["Amount"] == 300000000  # 300 * 1000000
+
+    # Большой бюджет: 500000 руб -> daily = min(max(500000/30, 300), 10000) = 10000
+    client.create_campaign(title="Large", body="", image_url="", budget_rub=500000)
+    campaign = captured["json"]["params"]["Campaigns"][0]
+    assert campaign["DailyBudget"]["Amount"] == 10000000000  # 10000 * 1000000
+
+    # Средний бюджет: 15000 руб -> daily = min(max(15000/30, 300), 10000) = 500
+    client.create_campaign(title="Medium", body="", image_url="", budget_rub=15000)
+    campaign = captured["json"]["params"]["Campaigns"][0]
+    assert campaign["DailyBudget"]["Amount"] == 500000000  # 500 * 1000000

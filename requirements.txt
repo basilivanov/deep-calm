@@ -25,7 +25,6 @@ httpx==0.27.0
 aiohttp==3.9.3
 
 # OpenAI / LLM
-openai==1.12.0
 anthropic==0.18.1
 
 # Logging
@@ -33,7 +32,6 @@ structlog==24.1.0
 python-json-logger==2.0.7
 
 # Background Jobs
-apscheduler==3.10.4
 celery[redis]==5.3.6
 
 # Testing

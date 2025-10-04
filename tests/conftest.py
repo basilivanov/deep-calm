@@ -5,22 +5,54 @@ DeepCalm — Test Configuration
 Следует cortex/DEEP-CALM-INFRASTRUCTURE.md (Testing)
 """
 import os
+from typing import Generator
+
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
+from sqlalchemy.engine import url as sa_url
+from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.orm import sessionmaker
-from typing import Generator
 
 if os.getenv("PYTEST_SKIP_DB_FIXTURES") == "1":
     pytest.skip("Skipping DB fixtures for lightweight unit tests", allow_module_level=True)
 
 from app.main import app
 from app.core.db import Base, get_db
-from app.core.config import settings
 
 
-# Test database URL (отдельная БД для тестов)
-TEST_DATABASE_URL = settings.database_url.replace("deep_calm_dev", "deep_calm_test")
+TEST_DATABASE_URL = os.getenv(
+    "TEST_DATABASE_URL",
+    "postgresql://dc:dcpass@dc-dev-db:5432/dc_test",
+)
+
+
+def ensure_test_database(connection_url: str) -> None:
+    """Создаёт тестовую БД, если она ещё не создана."""
+    url = sa_url.make_url(connection_url)
+    admin_url = url.set(database="postgres")
+
+    admin_engine = create_engine(admin_url, isolation_level="AUTOCOMMIT")
+    try:
+        with admin_engine.connect() as conn:
+            conn.execute(
+                text(
+                    f'CREATE DATABASE "{url.database}" OWNER "{url.username}"'
+                )
+            )
+    except ProgrammingError:
+        # База уже существует — ничего не делаем
+        pass
+    except OperationalError as exc:
+        raise RuntimeError(
+            "Не удалось подключиться к Postgres для создания тестовой БД. "
+            "Убедитесь, что docker compose поднят (dc-dev-db) или переопределите TEST_DATABASE_URL."
+        ) from exc
+    finally:
+        admin_engine.dispose()
+
+
+ensure_test_database(TEST_DATABASE_URL)
 
 # Test engine
 test_engine = create_engine(

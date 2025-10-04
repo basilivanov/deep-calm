@@ -4,7 +4,8 @@ from __future__ import annotations
 import json
 import uuid
 from dataclasses import dataclass
-from typing import Any, Dict
+from datetime import date
+from typing import Any, Dict, List
 
 import httpx
 import structlog
@@ -39,14 +40,21 @@ class YandexDirectClient:
     timeout: float = 15.0
 
     def __post_init__(self) -> None:
-        self._enabled = bool(self.token and self.login)
+        self._enabled = bool(self.token)
         self._base_url = YANDEX_SANDBOX_URL if self.sandbox else YANDEX_API_URL
 
+        # Убираем login если пустой (роль "Клиент")
+        if self.login and not self.login.strip():
+            self.login = None
+
         mode = "real" if self._enabled else "mock"
+        role = "agency" if self.login else "client"
         logger.info(
             "yandex_direct_client_initialized",
             mode=mode,
             sandbox=self.sandbox,
+            role=role,
+            has_login=bool(self.login)
         )
 
     # ------------------------------------------------------------------
@@ -58,6 +66,13 @@ class YandexDirectClient:
         В реальном режиме отправляет запрос `campaigns/add` и возвращает ID кампании.
         В mock-режиме создаёт псевдо-ID (для локальной разработки).
         """
+        logger.info(
+            "yandex_direct_create_campaign_started",
+            title=title,
+            budget_rub=budget_rub,
+            enabled=self._enabled,
+            sandbox=self.sandbox
+        )
 
         if not self._enabled:
             campaign_id = f"direct_camp_{uuid.uuid4().hex[:8]}"
@@ -65,6 +80,8 @@ class YandexDirectClient:
             return campaign_id
 
         params = self._build_text_campaign_payload(title=title, budget_rub=budget_rub)
+        logger.info("yandex_direct_payload_built", params=params)
+
         result = self._request("campaigns", "add", params)
 
         add_results = result.get("AddResults", [])
@@ -96,6 +113,67 @@ class YandexDirectClient:
         logger.info("yandex_direct_campaign_resumed", campaign_id=campaign_id)
         return {"status": "active"}
 
+    def get_campaigns(self) -> List[Dict[str, Any]]:
+        """Получает список кампаний из Яндекс.Директ.
+
+        Returns:
+            Список кампаний с полями Id, Name, Status, State
+        """
+        if not self._enabled:
+            # Mock данные для разработки
+            mock_campaigns = [
+                {
+                    "Id": 700005747,
+                    "Name": "Test API Sandbox campaign 1",
+                    "Status": "ACCEPTED",
+                    "State": "ON",
+                    "Type": "TEXT_CAMPAIGN"
+                }
+            ]
+            logger.info("yandex_direct_mock_get_campaigns", count=len(mock_campaigns))
+            return mock_campaigns
+
+        params = {
+            "SelectionCriteria": {},
+            "FieldNames": ["Id", "Name", "Status", "State", "Type"]
+        }
+
+        result = self._request("campaigns", "get", params)
+        campaigns = result.get("Campaigns", [])
+
+        logger.info("yandex_direct_campaigns_retrieved", count=len(campaigns))
+        return campaigns
+
+    def health_check(self) -> Dict[str, Any]:
+        """Проверяет подключение к API Яндекс.Директ.
+
+        Returns:
+            Статус подключения и информация о аккаунте
+        """
+        if not self._enabled:
+            return {
+                "status": "mock_mode",
+                "message": "Работает в режиме mock (токен не настроен)",
+                "role": "mock"
+            }
+
+        try:
+            campaigns = self.get_campaigns()
+            return {
+                "status": "ok",
+                "message": f"Подключение работает. Найдено кампаний: {len(campaigns)}",
+                "role": "agency" if self.login else "client",
+                "campaigns_count": len(campaigns),
+                "sandbox": self.sandbox
+            }
+        except Exception as e:
+            logger.error("yandex_direct_health_check_failed", error=str(e))
+            return {
+                "status": "error",
+                "message": f"Ошибка подключения: {str(e)}",
+                "role": "agency" if self.login else "client"
+            }
+
     # ------------------------------------------------------------------
     # Вспомогательные методы
     # ------------------------------------------------------------------
@@ -105,11 +183,12 @@ class YandexDirectClient:
 
         headers = {
             "Authorization": f"Bearer {self.token}",
-            "Client-Login": self.login or "",
             "Accept-Language": self.language,
             "Content-Type": "application/json; charset=utf-8",
             "User-Agent": "DeepCalm/1.0",
         }
+        if self.login:
+            headers["Client-Login"] = self.login
 
         logger.debug(
             "yandex_direct_request",
@@ -126,10 +205,28 @@ class YandexDirectClient:
 
         data = response.json()
 
+        logger.info(
+            "yandex_direct_response",
+            url=url,
+            method=method,
+            status_code=response.status_code,
+            response_data=data
+        )
+
         if "error" in data:
+            error_details = data["error"]
+            logger.error(
+                "yandex_direct_api_error",
+                service=service,
+                method=method,
+                error_code=error_details.get("error_code"),
+                error_string=error_details.get("error_string"),
+                error_detail=error_details.get("error_detail"),
+                request_id=error_details.get("request_id")
+            )
             raise YandexDirectError(
-                "Ошибка Яндекс.Директ",
-                payload=data["error"],
+                f"Яндекс.Директ API ошибка: {error_details.get('error_string', 'Unknown')}",
+                payload=error_details,
             )
 
         result = data.get("result")
@@ -140,24 +237,58 @@ class YandexDirectClient:
 
     @staticmethod
     def _build_text_campaign_payload(*, title: str, budget_rub: float) -> Dict[str, Any]:
+        """Создает payload для создания текстовой кампании в API v5.
+
+        Структура соответствует документации:
+        https://yandex.ru/dev/direct/doc/ref-v5/campaigns/add.html
+        """
         normalized_title = title[:255] if title else "DeepCalm campaign"
-        amount_micros = str(max(int(budget_rub * 1_000_000), 1_000_000))
+        # Дневной бюджет в валюте * 1_000_000, но ограничиваем разумными пределами для sandbox
+        # Используем минимум 300 руб/день, максимум 10000 руб/день
+        daily_budget_rub = min(max(budget_rub / 30, 300), 10000)  # предполагаем что budget_rub - месячный
+        amount_micros = int(daily_budget_rub * 1_000_000)
+
+        logger.info(
+            "yandex_direct_budget_calculation",
+            original_budget_rub=budget_rub,
+            daily_budget_rub=daily_budget_rub,
+            amount_micros=amount_micros
+        )
+        # Updated budget calculation logic - fixed 5 billion issue
 
         return {
             "Campaigns": [
                 {
                     "Name": normalized_title,
-                    "DailyBudget": {"Amount": amount_micros, "Mode": "STANDARD"},
+                    "StartDate": date.today().strftime("%Y-%m-%d"),  # Начинаем сегодня
+                    "DailyBudget": {
+                        "Amount": amount_micros,
+                        "Mode": "STANDARD"
+                    },
                     "TextCampaign": {
                         "BiddingStrategy": {
-                            "Search": {"BiddingStrategyType": "SERVING_OFF"},
-                            "Network": {"BiddingStrategyType": "MAXIMUM_COVERAGE"},
+                            "Search": {
+                                "BiddingStrategyType": "HIGHEST_POSITION"
+                            },
+                            "Network": {
+                                "BiddingStrategyType": "SERVING_OFF"
+                            }
                         },
                         "Settings": [
-                            {"Option": "ADD_TO_FAVORITES", "Value": "YES"},
-                            {"Option": "ENABLE_AREA_OF_INTEREST_TARGETING", "Value": "NO"},
-                        ],
-                    },
+                            {
+                                "Option": "ADD_TO_FAVORITES",
+                                "Value": "YES"
+                            },
+                            {
+                                "Option": "ENABLE_COMPANY_INFO",
+                                "Value": "YES"
+                            },
+                            {
+                                "Option": "ENABLE_SITE_MONITORING",
+                                "Value": "YES"
+                            }
+                        ]
+                    }
                 }
             ]
         }
