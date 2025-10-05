@@ -46,8 +46,7 @@ export function ChannelPerformance({ data, title = "Эффективность �
     <div className="space-y-6">
       <h3 className="text-lg font-semibold text-dc-ink">{title}</h3>
 
-      {/* CAC по каналам - график */}
-      <div className="bg-white rounded-lg border border-dc-warm-300 p-6">
+      <div className="bg-dc-bg-secondary rounded-2xl border border-dc-border p-6 shadow-sm">
         <h4 className="text-md font-medium text-dc-ink mb-4">CAC по каналам</h4>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={data}>
@@ -79,35 +78,34 @@ export function ChannelPerformance({ data, title = "Эффективность �
         </ResponsiveContainer>
       </div>
 
-      {/* Детальная таблица */}
-      <div className="bg-white rounded-lg border border-dc-warm-300 overflow-hidden">
-        <div className="px-6 py-4 border-b border-dc-warm-300">
+      <div className="bg-dc-bg-secondary rounded-2xl border border-dc-border overflow-hidden shadow-sm">
+        <div className="px-4 sm:px-6 py-4 border-b border-dc-border">
           <h4 className="text-md font-medium text-dc-ink">Детальная статистика</h4>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-dc-warm-100">
+          <table className="w-full min-w-[680px]">
+            <thead className="bg-dc-warm-100/70">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-dc-ink uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-dc-ink uppercase tracking-wider">
                   Канал
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-dc-ink uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-dc-ink uppercase tracking-wider">
                   Расходы
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-dc-ink uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-dc-ink uppercase tracking-wider">
                   Лиды
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-dc-ink uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-dc-ink uppercase tracking-wider">
                   Конверсии
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-dc-ink uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-dc-ink uppercase tracking-wider">
                   CAC
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-dc-ink uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-dc-ink uppercase tracking-wider">
                   ROAS
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-dc-ink uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-dc-ink uppercase tracking-wider">
                   Тренд CAC
                 </th>
               </tr>
@@ -115,7 +113,7 @@ export function ChannelPerformance({ data, title = "Эффективность �
             <tbody className="bg-white divide-y divide-dc-warm-200">
               {data.map((channel) => (
                 <tr key={channel.channel} className="hover:bg-dc-warm-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div
                         className="w-3 h-3 rounded-full mr-3"
@@ -126,13 +124,13 @@ export function ChannelPerformance({ data, title = "Эффективность �
                       </span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-dc-ink">
+                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-dc-ink">
                     {formatRub(channel.spend)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-dc-ink">
+                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-dc-ink">
                     {channel.leads}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-dc-ink">
+                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-dc-ink">
                     {channel.conversions}
                     <div className="w-16 mt-1">
                       <ProgressBar
@@ -143,7 +141,7 @@ export function ChannelPerformance({ data, title = "Эффективность �
                       />
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                     <span className="text-sm text-dc-ink">
                       {formatRub(channel.cac)}
                     </span>
@@ -156,7 +154,7 @@ export function ChannelPerformance({ data, title = "Эффективность �
                       />
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                     <span className={`text-sm font-medium ${
                       channel.roas >= 5 ? 'text-dc-success-700' :
                       channel.roas >= 3 ? 'text-dc-warning-700' :
@@ -165,7 +163,7 @@ export function ChannelPerformance({ data, title = "Эффективность �
                       {channel.roas.toFixed(1)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                     <div className="w-24 h-8">
                       <SparkLine
                         data={channel.sparklineData}

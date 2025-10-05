@@ -61,9 +61,9 @@ describe('Dashboard', () => {
     });
 
     // Проверяем основные элементы
-    expect(screen.getByText('⚠️ Требует внимания')).toBeInTheDocument();
-    expect(screen.getByText('Dashboard')).toBeInTheDocument();
-    expect(screen.getByText('Обзор всех кампаний и метрик')).toBeInTheDocument();
+    expect(screen.getByText('⚠️ Требуется внимание')).toBeInTheDocument();
+    expect(screen.getByText('Маркетинговая панель')).toBeInTheDocument();
+    expect(screen.getByText('Ключевые метрики по воронкам и окупаемости рекламы')).toBeInTheDocument();
   });
 
   it('показывает сообщение о пустых данных', async () => {
@@ -72,7 +72,7 @@ describe('Dashboard', () => {
     renderWithClient(<Dashboard />);
 
     await waitFor(() => {
-      expect(screen.getByText('Нет данных')).toBeInTheDocument();
+      expect(screen.getByText('Пока нет данных для отображения')).toBeInTheDocument();
     });
   });
 });

@@ -39,14 +39,18 @@ export function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-xl text-gray-600">Загрузка...</div>
+      <div className="py-24 flex items-center justify-center">
+        <div className="text-base font-medium text-dc-neutral">Загружаем свежие показатели…</div>
       </div>
     );
   }
 
   if (!summary) {
-    return <div>Нет данных</div>;
+    return (
+      <div className="py-24 flex items-center justify-center">
+        <div className="text-base font-medium text-dc-neutral">Пока нет данных для отображения</div>
+      </div>
+    );
   }
 
   const formatRub = (value: number) => {
@@ -128,26 +132,21 @@ export function Dashboard() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-dc-primary">
-          Dashboard
-        </h1>
-        <p className="text-dc-primary/70 mt-1">
-          Обзор всех кампаний и метрик
-        </p>
+    <div className="py-8 space-y-8">
+      <div className="space-y-1">
+        <p className="text-xs uppercase tracking-[0.24em] text-dc-neutral">Обзор</p>
+        <h1 className="text-3xl font-semibold text-dc-primary">Маркетинговая панель</h1>
+        <p className="text-sm text-dc-neutral">Ключевые метрики по воронкам и окупаемости рекламы</p>
       </div>
 
-      {/* Основные метрики */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <MetricCard
           title="CAC текущий"
           value={summary.avg_cac_rub ? formatRub(summary.avg_cac_rub) : '—'}
           subtitle={
             summary.avg_cac_rub
               ? summary.avg_cac_rub <= 500
-                ? '✅ В пределах нормы'
+                ? '✅ В пределах цели'
                 : '⚠️ Выше целевого'
               : 'Нет данных'
           }
@@ -162,8 +161,8 @@ export function Dashboard() {
               ? summary.avg_roas >= 5
                 ? '✅ Отличный результат'
                 : summary.avg_roas >= 3
-                ? '⚠️ Требует внимания'
-                : '❌ Ниже целевого'
+                  ? '⚠️ Требуется внимание'
+                  : '❌ Ниже плана'
               : 'Нет конверсий'
           }
           icon={<TrendingUp className="w-4 h-4" />}
@@ -186,20 +185,18 @@ export function Dashboard() {
           subtitle={`${summary.paused_campaigns} на паузе`}
           icon={<Target className="w-4 h-4" />}
         />
-      </div>
+      </section>
 
-      {/* Спидометр выручки и статус */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-4">
           <RevenueSpeedometer
             current={summary.total_revenue_rub}
-            target={100000} // TODO: из настроек target_monthly_revenue_rub
+            target={100000}
             label="Выручка за месяц"
           />
         </div>
 
-        <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Алерты и статусы */}
+        <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -211,34 +208,22 @@ export function Dashboard() {
                 Статус кампаний
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm text-dc-neutral-600">CAC</span>
-                  <span className={`text-sm font-medium ${
-                    summary.avg_cac_rub && summary.avg_cac_rub <= 500
-                      ? 'text-dc-success-700'
-                      : 'text-dc-warning-700'
-                  }`}>
-                    {summary.avg_cac_rub ? `${summary.avg_cac_rub.toFixed(0)}₽ / 500₽` : '—'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-dc-neutral-600">ROAS</span>
-                  <span className={`text-sm font-medium ${
-                    summary.avg_roas && summary.avg_roas >= 5
-                      ? 'text-dc-success-700'
-                      : 'text-dc-warning-700'
-                  }`}>
-                    {summary.avg_roas ? `${summary.avg_roas.toFixed(1)} / 5.0` : '—'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-dc-neutral-600">Активных кампаний</span>
-                  <span className="text-sm font-medium text-dc-ink">
-                    {summary.active_campaigns}
-                  </span>
-                </div>
+            <CardContent className="space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-dc-neutral-600">CAC</span>
+                <span className={`font-medium ${summary.avg_cac_rub && summary.avg_cac_rub <= 500 ? 'text-dc-success-700' : 'text-dc-warning-700'}`}>
+                  {summary.avg_cac_rub ? `${summary.avg_cac_rub.toFixed(0)}₽ / 500₽` : '—'}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-dc-neutral-600">ROAS</span>
+                <span className={`font-medium ${summary.avg_roas && summary.avg_roas >= 5 ? 'text-dc-success-700' : 'text-dc-warning-700'}`}>
+                  {summary.avg_roas ? `${summary.avg_roas.toFixed(1)} / 5.0` : '—'}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-dc-neutral-600">Активных кампаний</span>
+                <span className="font-medium text-dc-ink">{summary.active_campaigns}</span>
               </div>
             </CardContent>
           </Card>
@@ -247,49 +232,38 @@ export function Dashboard() {
             <CardHeader>
               <CardTitle>Использование бюджета</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-dc-neutral-600">Потрачено</span>
-                    <span className="text-dc-ink font-medium">
-                      {formatRub(summary.total_spent_rub)}
-                    </span>
-                  </div>
-                  <div className="w-full bg-dc-warm-300 rounded-full h-2">
-                    <div
-                      className="bg-dc-accent-500 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${Math.min(summary.budget_utilization, 100)}%` }}
-                    />
-                  </div>
-                  <div className="text-xs text-dc-neutral-500 mt-1">
-                    {summary.budget_utilization.toFixed(1)}% от бюджета
-                  </div>
+            <CardContent className="space-y-4">
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-dc-neutral-600">Потрачено</span>
+                  <span className="text-dc-ink font-medium">{formatRub(summary.total_spent_rub)}</span>
                 </div>
-                <div className="pt-2 border-t border-dc-warm-200">
-                  <div className="text-sm text-dc-neutral-600">
-                    Общий бюджет: {formatRub(summary.total_budget_rub)}
-                  </div>
+                <div className="h-2 w-full rounded-full bg-dc-warm-300/80">
+                  <div
+                    className="h-2 rounded-full bg-dc-accent"
+                    style={{ width: `${Math.min(summary.budget_utilization, 100)}%` }}
+                  />
                 </div>
+                <div className="text-xs text-dc-neutral-500 mt-1">
+                  {summary.budget_utilization.toFixed(1)}% от доступного бюджета
+                </div>
+              </div>
+              <div className="text-sm text-dc-neutral-600">
+                Общий бюджет: <span className="font-medium text-dc-ink">{formatRub(summary.total_budget_rub)}</span>
               </div>
             </CardContent>
           </Card>
         </div>
-      </div>
+      </section>
 
-      {/* Графики трендов */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle>CAC и ROAS за 30 дней</CardTitle>
           </CardHeader>
           <CardContent>
             {dailyMetrics && (
-              <MetricChart
-                data={dailyMetrics}
-                metrics={['cac', 'roas']}
-                height={250}
-              />
+              <MetricChart data={dailyMetrics} metrics={['cac', 'roas']} height={250} />
             )}
           </CardContent>
         </Card>
@@ -300,22 +274,23 @@ export function Dashboard() {
           </CardHeader>
           <CardContent>
             {dailyMetrics && (
-              <MetricChart
-                data={dailyMetrics}
-                metrics={['conversions', 'revenue']}
-                height={250}
-              />
+              <MetricChart data={dailyMetrics} metrics={['conversions', 'revenue']} height={250} />
             )}
           </CardContent>
         </Card>
-      </div>
+      </section>
 
-      {/* Производительность каналов */}
       {channelData && (
-        <ChannelPerformance data={channelData} />
+        <Card className="border border-dc-border shadow-sm">
+          <CardHeader className="pb-0">
+            <CardTitle className="text-dc-ink">Каналы</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <ChannelPerformance data={channelData} />
+          </CardContent>
+        </Card>
       )}
 
-      {/* Лучшие кампании */}
       <Card>
         <CardHeader>
           <CardTitle>Топ кампаний по ROAS</CardTitle>
@@ -323,20 +298,18 @@ export function Dashboard() {
         <CardContent>
           {summary.top_performing_campaign ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-dc-warm-50 rounded-lg">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-4 bg-dc-warm-100 rounded-lg">
                 <div>
                   <h4 className="font-semibold text-dc-ink">
                     🏆 {summary.top_performing_campaign.campaign_title}
                   </h4>
-                  <p className="text-sm text-dc-neutral-600 mt-1">
-                    Лучший ROAS за период
-                  </p>
+                  <p className="text-sm text-dc-neutral-600 mt-1">Лучший ROAS за период</p>
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-bold text-dc-success-700">
                     {summary.top_performing_campaign.roas.toFixed(1)}
                   </div>
-                  <div className="text-sm text-dc-neutral-600">ROAS</div>
+                  <div className="text-xs text-dc-neutral-600 uppercase tracking-wide">ROAS</div>
                 </div>
               </div>
 
@@ -346,18 +319,14 @@ export function Dashboard() {
                   <div className="text-xl font-bold text-dc-ink mt-1">
                     {summary.avg_cac_rub ? formatRub(summary.avg_cac_rub) : '—'}
                   </div>
-                  <div className="text-xs text-dc-neutral-500 mt-1">
-                    Цель: ≤ 500₽
-                  </div>
+                  <div className="text-xs text-dc-neutral-500 mt-1">Цель ≤ 500₽</div>
                 </div>
                 <div className="text-center">
                   <div className="text-sm text-dc-neutral-600">Средний ROAS</div>
                   <div className="text-xl font-bold text-dc-ink mt-1">
                     {summary.avg_roas ? summary.avg_roas.toFixed(1) : '—'}
                   </div>
-                  <div className="text-xs text-dc-neutral-500 mt-1">
-                    Цель: ≥ 5.0
-                  </div>
+                  <div className="text-xs text-dc-neutral-500 mt-1">Цель ≥ 5.0</div>
                 </div>
                 <div className="text-center">
                   <div className="text-sm text-dc-neutral-600">Conversion Rate</div>
@@ -366,9 +335,7 @@ export function Dashboard() {
                       ? `${((summary.total_conversions / summary.total_leads) * 100).toFixed(1)}%`
                       : '—'}
                   </div>
-                  <div className="text-xs text-dc-neutral-500 mt-1">
-                    Цель: ≥ 10%
-                  </div>
+                  <div className="text-xs text-dc-neutral-500 mt-1">Цель ≥ 10%</div>
                 </div>
               </div>
             </div>
