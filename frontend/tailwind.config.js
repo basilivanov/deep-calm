@@ -8,45 +8,49 @@ export default {
     extend: {
       colors: {
         'dc-primary': {
+          DEFAULT: '#6B4E3D',
           50: '#f4f0ed',
           100: '#e8e0da',
           200: '#d8c9be',
           300: '#c4ac9f',
           400: '#ae8d7e',
-          500: '#6B4E3D', // Якорь
+          500: '#6B4E3D',
           600: '#5f4637',
           700: '#503a2e',
           800: '#423026',
           900: '#372820',
         },
         'dc-accent': {
+          DEFAULT: '#A67C52',
           50: '#f9f4ee',
           100: '#f3e8d9',
           200: '#e8d5b9',
           300: '#dabe97',
           400: '#cca572',
-          500: '#A67C52', // Якорь
+          500: '#A67C52',
           600: '#95704a',
           700: '#7d5e3e',
           800: '#654c32',
           900: '#523e29',
         },
         'dc-neutral': {
+          DEFAULT: '#828282',
           50: '#f7f7f7',
           100: '#ededed',
           200: '#d8d8d8',
           300: '#bebebe',
           400: '#a0a0a0',
-          500: '#828282', // Якорь (серый)
+          500: '#828282',
           600: '#757575',
           700: '#636363',
           800: '#515151',
           900: '#434343',
         },
         'dc-warm': {
+          DEFAULT: '#f7f5f2',
           50: '#fdfcfb',
           100: '#fbf9f7',
-          200: '#f7f5f2', // Якорь (старый dc-bg)
+          200: '#f7f5f2',
           300: '#f2ede8',
           400: '#ede6de',
           500: '#e7dbd1',
@@ -56,24 +60,30 @@ export default {
           900: '#6f665d',
         },
         'dc-success': {
+          DEFAULT: '#22c55e',
           100: '#dcfce7',
           300: '#86efac',
           500: '#22c55e',
           700: '#15803d',
         },
         'dc-warning': {
+          DEFAULT: '#f59e0b',
           100: '#fef3c7',
           300: '#fcd34d',
           500: '#f59e0b',
           700: '#b45309',
         },
         'dc-danger': {
+          DEFAULT: '#ef4444',
           100: '#fee2e2',
           300: '#fca5a5',
           500: '#ef4444',
           700: '#b91c1c',
         },
-        'dc-ink': '#262626', // Основной текст
+        'dc-bg': '#F7F5F2',
+        'dc-bg-secondary': '#FFFFFF',
+        'dc-border': '#E8E0DA',
+        'dc-ink': '#262626',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
