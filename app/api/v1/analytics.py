@@ -1,6 +1,8 @@
 """
 API endpoints для аналитики кампаний
 """
+from datetime import date
+from typing import Optional
 from uuid import UUID
 
 import structlog
@@ -12,11 +14,21 @@ from app.schemas.analytics import (
     CampaignAnalyticsResponse,
     DashboardSummary,
     DateRangeRequest,
+    DashboardDailyPoint,
+    ChannelPerformanceItem,
 )
 from app.services.analytics_service import AnalyticsService
 
 logger = structlog.get_logger()
 router = APIRouter(prefix="/analytics", tags=["analytics"])
+
+
+def _parse_date(value: Optional[str]) -> Optional[date]:
+    if not value:
+        return None
+    from datetime import datetime
+
+    return datetime.strptime(value, "%Y-%m-%d").date()
 
 
 @router.get("/campaigns/{campaign_id}", response_model=CampaignAnalyticsResponse)
@@ -48,16 +60,8 @@ def get_campaign_analytics(
 
     try:
         # Парсим даты если есть
-        start_date_obj = None
-        end_date_obj = None
-
-        if start_date:
-            from datetime import datetime
-            start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
-
-        if end_date:
-            from datetime import datetime
-            end_date_obj = datetime.strptime(end_date, "%Y-%m-%d").date()
+        start_date_obj = _parse_date(start_date)
+        end_date_obj = _parse_date(end_date)
 
         result = service.get_campaign_metrics(
             campaign_id=campaign_id,
@@ -128,16 +132,8 @@ def get_dashboard_summary(
 
     try:
         # Парсим даты если есть
-        start_date_obj = None
-        end_date_obj = None
-
-        if start_date:
-            from datetime import datetime
-            start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
-
-        if end_date:
-            from datetime import datetime
-            end_date_obj = datetime.strptime(end_date, "%Y-%m-%d").date()
+        start_date_obj = _parse_date(start_date)
+        end_date_obj = _parse_date(end_date)
 
         summary = service.get_dashboard_summary(
             start_date=start_date_obj,
@@ -162,4 +158,44 @@ def get_dashboard_summary(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Ошибка при расчете сводки"
+        )
+
+
+@router.get("/dashboard/daily", response_model=list[DashboardDailyPoint])
+def get_dashboard_daily_metrics(
+    start_date: Optional[str] = Query(None, description="Начальная дата (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="Конечная дата (YYYY-MM-DD)"),
+    db: Session = Depends(get_db)
+):
+    service = AnalyticsService(db)
+    try:
+        return service.get_dashboard_daily_metrics(
+            start_date=_parse_date(start_date),
+            end_date=_parse_date(end_date),
+        )
+    except Exception as e:
+        logger.error("get_dashboard_daily_metrics_error", error=str(e), exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Ошибка при расчете ежедневных метрик"
+        )
+
+
+@router.get("/dashboard/channels", response_model=list[ChannelPerformanceItem])
+def get_dashboard_channel_performance(
+    start_date: Optional[str] = Query(None, description="Начальная дата (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="Конечная дата (YYYY-MM-DD)"),
+    db: Session = Depends(get_db)
+):
+    service = AnalyticsService(db)
+    try:
+        return service.get_channel_performance(
+            start_date=_parse_date(start_date),
+            end_date=_parse_date(end_date),
+        )
+    except Exception as e:
+        logger.error("get_dashboard_channel_performance_error", error=str(e), exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Ошибка при расчете метрик каналов"
         )

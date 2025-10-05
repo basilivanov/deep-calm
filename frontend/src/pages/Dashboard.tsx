@@ -18,21 +18,20 @@ export function Dashboard() {
     refetchInterval: 30000, // Обновление каждые 30 сек
   });
 
-  // Дополнительные запросы для графиков
-  const { data: dailyMetrics } = useQuery({
-    queryKey: ['daily-metrics'],
+  const { data: dailyMetrics } = useQuery<DailyMetricPoint[]>({
+    queryKey: ['dashboard-daily-metrics'],
     queryFn: async () => {
-      // TODO: реальный API endpoint /api/v1/analytics/daily?range=30d
-      return generateMockDailyData();
+      const response = await analyticsApi.dashboardDaily();
+      return response.data;
     },
-    refetchInterval: 300000, // 5 минут
+    refetchInterval: 300000,
   });
 
-  const { data: channelData } = useQuery({
-    queryKey: ['channel-performance'],
+  const { data: channelData } = useQuery<ChannelPerformanceItem[]>({
+    queryKey: ['dashboard-channel-performance'],
     queryFn: async () => {
-      // TODO: реальный API endpoint /api/v1/analytics/channels?range=30d
-      return generateMockChannelData();
+      const response = await analyticsApi.channelPerformance();
+      return response.data;
     },
     refetchInterval: 300000,
   });
@@ -59,76 +58,6 @@ export function Dashboard() {
       currency: 'RUB',
       minimumFractionDigits: 0,
     }).format(value);
-  };
-
-  // Генерация моковых данных для демонстрации (до подключения реального API)
-  const generateMockDailyData = () => {
-    const data = [];
-    const now = new Date();
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - i);
-
-      data.push({
-        date: date.toISOString().split('T')[0],
-        cac: 450 + Math.random() * 200 - 100, // CAC около 450₽ ± 100₽
-        roas: 4.5 + Math.random() * 2 - 1,    // ROAS около 4.5 ± 1
-        conversions: Math.floor(Math.random() * 8) + 2, // 2-10 конверсий
-        revenue: 15000 + Math.random() * 10000 - 5000,  // выручка 10-20к
-        spend: 3000 + Math.random() * 2000 - 1000       // расходы 2-5к
-      });
-    }
-    return data;
-  };
-
-  const generateMockChannelData = () => {
-    return [
-      {
-        channel: 'vk',
-        channelName: 'VK Реклама',
-        spend: 45000,
-        leads: 120,
-        conversions: 18,
-        revenue: 63000,
-        cac: 375,
-        roas: 1.4,
-        targetCac: 500,
-        sparklineData: Array.from({length: 7}, (_, i) => ({
-          value: 350 + Math.random() * 100,
-          date: new Date(Date.now() - (6-i) * 24 * 60 * 60 * 1000).toISOString()
-        }))
-      },
-      {
-        channel: 'direct',
-        channelName: 'Яндекс.Директ',
-        spend: 32000,
-        leads: 85,
-        conversions: 15,
-        revenue: 52500,
-        cac: 376,
-        roas: 1.64,
-        targetCac: 500,
-        sparklineData: Array.from({length: 7}, (_, i) => ({
-          value: 380 + Math.random() * 80,
-          date: new Date(Date.now() - (6-i) * 24 * 60 * 60 * 1000).toISOString()
-        }))
-      },
-      {
-        channel: 'avito',
-        channelName: 'Avito',
-        spend: 28000,
-        leads: 95,
-        conversions: 12,
-        revenue: 42000,
-        cac: 295,
-        roas: 1.5,
-        targetCac: 500,
-        sparklineData: Array.from({length: 7}, (_, i) => ({
-          value: 290 + Math.random() * 60,
-          date: new Date(Date.now() - (6-i) * 24 * 60 * 60 * 1000).toISOString()
-        }))
-      }
-    ];
   };
 
   return (

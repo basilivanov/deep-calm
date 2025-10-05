@@ -2,7 +2,7 @@
 Pydantic schemas для Analytics API
 """
 from datetime import date
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -92,3 +92,40 @@ class DateRangeRequest(BaseModel):
     """Запрос с диапазоном дат"""
     start_date: Optional[date] = Field(None, description="Начальная дата (включительно)")
     end_date: Optional[date] = Field(None, description="Конечная дата (включительно)")
+
+
+class DashboardDailyPoint(BaseModel):
+    """Ежедневные метрики для дашборда"""
+    date: date
+    conversions: int
+    leads: int
+    revenue: float = Field(alias="revenue")
+    spend: float = Field(alias="spend")
+    cac: Optional[float]
+    roas: Optional[float]
+
+    class Config:
+        populate_by_name = True
+
+
+class ChannelSparklinePoint(BaseModel):
+    date: date
+    value: float
+
+
+class ChannelPerformanceItem(BaseModel):
+    """Агрегированная аналитика по каналам."""
+
+    channel: str
+    channel_name: str = Field(alias="channelName")
+    spend: float = Field(alias="spend")
+    leads: int
+    conversions: int
+    revenue: float = Field(alias="revenue")
+    cac: Optional[float]
+    roas: Optional[float]
+    target_cac: Optional[float] = Field(alias="targetCac")
+    sparkline: List[ChannelSparklinePoint] = Field(default_factory=list, alias="sparklineData")
+
+    class Config:
+        populate_by_name = True

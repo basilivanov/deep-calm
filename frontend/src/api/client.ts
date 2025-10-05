@@ -62,6 +62,34 @@ export interface DashboardSummary {
   } | null;
 }
 
+export interface DailyMetricPoint {
+  date: string;
+  conversions: number;
+  leads: number;
+  revenue: number;
+  spend: number;
+  cac: number | null;
+  roas: number | null;
+}
+
+export interface ChannelSparklinePoint {
+  date: string;
+  value: number;
+}
+
+export interface ChannelPerformanceItem {
+  channel: string;
+  channelName: string;
+  spend: number;
+  leads: number;
+  conversions: number;
+  revenue: number;
+  cac: number | null;
+  roas: number | null;
+  targetCac: number | null;
+  sparklineData: ChannelSparklinePoint[];
+}
+
 // API methods
 export const campaignsApi = {
   list: (params?: { page?: number; page_size?: number }) =>
@@ -89,6 +117,12 @@ export const campaignsApi = {
 export const analyticsApi = {
   dashboard: (params?: { start_date?: string; end_date?: string }) =>
     apiClient.get<DashboardSummary>('/analytics/dashboard', { params }),
+
+  dashboardDaily: (params?: { start_date?: string; end_date?: string }) =>
+    apiClient.get<DailyMetricPoint[]>('/analytics/dashboard/daily', { params }),
+
+  channelPerformance: (params?: { start_date?: string; end_date?: string }) =>
+    apiClient.get<ChannelPerformanceItem[]>('/analytics/dashboard/channels', { params }),
 
   campaignMetrics: (id: string, params?: { start_date?: string; end_date?: string }) =>
     apiClient.get(`/analytics/campaigns/${id}`, { params }),

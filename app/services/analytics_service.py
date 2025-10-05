@@ -1,8 +1,9 @@
 """
 Сервис аналитики для расчета метрик кампаний
 """
-from datetime import date
-from typing import Optional
+from collections import defaultdict
+from datetime import date, timedelta
+from typing import Optional, Dict, List
 from uuid import UUID
 
 import structlog
@@ -17,6 +18,9 @@ from app.schemas.analytics import (
     CampaignMetrics,
     ChannelBreakdown,
     DashboardSummary,
+    DashboardDailyPoint,
+    ChannelPerformanceItem,
+    ChannelSparklinePoint,
 )
 
 logger = structlog.get_logger()
@@ -391,3 +395,229 @@ class AnalyticsService:
             return "avito"
 
         return None
+
+    def get_dashboard_daily_metrics(
+        self,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+    ) -> List[DashboardDailyPoint]:
+        """Возвращает ежедневные агрегированные метрики для дашборда."""
+
+        if end_date is None:
+            end_date = date.today()
+        if start_date is None:
+            start_date = end_date - timedelta(days=29)
+
+        if start_date > end_date:
+            start_date, end_date = end_date, start_date
+
+        campaigns = self.db.query(Campaign).all()
+        campaign_targets: Dict[UUID, float] = {
+            campaign.id: float(campaign.target_cac_rub or 0.0)
+            for campaign in campaigns
+        }
+
+        daily_stats = defaultdict(lambda: {
+            "conversions": 0,
+            "revenue": 0.0,
+            "spent": 0.0,
+            "leads": 0,
+        })
+
+        conversion_rows = (
+            self.db.query(
+                func.date(Conversion.converted_at).label("day"),
+                Conversion.campaign_id,
+                func.count(Conversion.id).label("conversions"),
+                func.sum(Conversion.revenue_rub).label("revenue"),
+            )
+            .filter(func.date(Conversion.converted_at) >= start_date)
+            .filter(func.date(Conversion.converted_at) <= end_date)
+            .group_by("day", Conversion.campaign_id)
+            .all()
+        )
+
+        for row in conversion_rows:
+            day = row.day
+            conversions = int(row.conversions or 0)
+            revenue = float(row.revenue or 0)
+            target_cac = campaign_targets.get(row.campaign_id, 0.0)
+            spent = conversions * target_cac
+
+            stats = daily_stats[day]
+            stats["conversions"] += conversions
+            stats["revenue"] += revenue
+            stats["spent"] += spent
+
+        lead_rows = (
+            self.db.query(
+                func.date(Lead.created_at).label("day"),
+                func.count(Lead.id).label("leads"),
+            )
+            .filter(Lead.created_at.isnot(None))
+            .filter(func.date(Lead.created_at) >= start_date)
+            .filter(func.date(Lead.created_at) <= end_date)
+            .group_by("day")
+            .all()
+        )
+
+        for row in lead_rows:
+            day = row.day
+            stats = daily_stats[day]
+            stats["leads"] += int(row.leads or 0)
+
+        results: List[DashboardDailyPoint] = []
+        current_day = start_date
+        while current_day <= end_date:
+            stats = daily_stats[current_day]
+            conversions = stats["conversions"]
+            spent = stats["spent"]
+            revenue = stats["revenue"]
+
+            cac = round(spent / conversions, 2) if conversions > 0 and spent > 0 else None
+            roas = round(revenue / spent, 2) if spent > 0 else None
+
+            results.append(
+                DashboardDailyPoint(
+                    date=current_day,
+                    conversions=conversions,
+                    leads=stats["leads"],
+                    revenue=round(revenue, 2),
+                    spend=round(spent, 2),
+                    cac=cac,
+                    roas=roas,
+                )
+            )
+            current_day += timedelta(days=1)
+
+        return results
+
+    def get_channel_performance(
+        self,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+    ) -> List[ChannelPerformanceItem]:
+        """Возвращает агрегированные метрики по каналам."""
+
+        if end_date is None:
+            end_date = date.today()
+        if start_date is None:
+            start_date = end_date - timedelta(days=29)
+
+        if start_date > end_date:
+            start_date, end_date = end_date, start_date
+
+        campaigns = self.db.query(Campaign).all()
+        campaign_targets: Dict[UUID, float] = {
+            campaign.id: float(campaign.target_cac_rub or 0.0)
+            for campaign in campaigns
+        }
+
+        channel_default_targets: Dict[str, List[float]] = defaultdict(list)
+        for campaign in campaigns:
+            for channel_code in campaign.channels or []:
+                channel_default_targets[channel_code].append(float(campaign.target_cac_rub or 0.0))
+
+        totals = defaultdict(lambda: {
+            "leads": 0,
+            "conversions": 0,
+            "revenue": 0.0,
+            "spent": 0.0,
+            "sparkline": defaultdict(lambda: {"conversions": 0, "spent": 0.0}),
+        })
+
+        conversion_rows = (
+            self.db.query(
+                func.coalesce(Conversion.channel_code, Lead.utm_source).label("channel_raw"),
+                Conversion.campaign_id,
+                func.date(Conversion.converted_at).label("day"),
+                func.count(Conversion.id).label("conversions"),
+                func.sum(Conversion.revenue_rub).label("revenue"),
+            )
+            .outerjoin(Lead, Conversion.lead_id == Lead.id)
+            .filter(func.date(Conversion.converted_at) >= start_date)
+            .filter(func.date(Conversion.converted_at) <= end_date)
+            .group_by("channel_raw", Conversion.campaign_id, "day")
+            .all()
+        )
+
+        for row in conversion_rows:
+            raw_code = row.channel_raw
+            channel_code = None
+            if raw_code:
+                lower = raw_code.lower()
+                if lower in {"vk", "direct", "avito"}:
+                    channel_code = lower
+                else:
+                    channel_code = self._extract_channel_from_utm(raw_code)
+
+            if not channel_code:
+                continue
+
+            conversions = int(row.conversions or 0)
+            revenue = float(row.revenue or 0)
+            target_cac = campaign_targets.get(row.campaign_id, 0.0)
+            spent = conversions * target_cac
+
+            channel_totals = totals[channel_code]
+            channel_totals["conversions"] += conversions
+            channel_totals["revenue"] += revenue
+            channel_totals["spent"] += spent
+            channel_totals["sparkline"][row.day]["conversions"] += conversions
+            channel_totals["sparkline"][row.day]["spent"] += spent
+
+        lead_rows = (
+            self.db.query(
+                func.coalesce(Lead.utm_source, '').label("source"),
+                func.count(Lead.id).label("leads"),
+            )
+            .filter(Lead.created_at.isnot(None))
+            .filter(func.date(Lead.created_at) >= start_date)
+            .filter(func.date(Lead.created_at) <= end_date)
+            .group_by("source")
+            .all()
+        )
+
+        for row in lead_rows:
+            channel_code = self._extract_channel_from_utm(row.source) if row.source else None
+            if channel_code:
+                totals[channel_code]["leads"] += int(row.leads or 0)
+
+        results: List[ChannelPerformanceItem] = []
+        for channel_code, stats in totals.items():
+            conversions = stats["conversions"]
+            spent = stats["spent"]
+            revenue = stats["revenue"]
+            cac = round(spent / conversions, 2) if conversions > 0 and spent > 0 else None
+            roas = round(revenue / spent, 2) if spent > 0 else None
+
+            target_values = channel_default_targets.get(channel_code, [])
+            avg_target = None
+            if target_values:
+                avg_target = round(sum(target_values) / len(target_values), 2)
+
+            sparkline_points: List[ChannelSparklinePoint] = []
+            sparkline_source = stats["sparkline"]
+            for day in sorted(sparkline_source.keys())[-7:]:
+                day_stats = sparkline_source[day]
+                day_conversions = day_stats["conversions"]
+                day_spent = day_stats["spent"]
+                value = round(day_spent / day_conversions, 2) if day_conversions > 0 and day_spent > 0 else 0.0
+                sparkline_points.append(ChannelSparklinePoint(date=day, value=value))
+
+            results.append(
+                ChannelPerformanceItem(
+                    channel=channel_code,
+                    channelName=self._get_channel_name(channel_code),
+                    spend=round(spent, 2),
+                    leads=stats["leads"],
+                    conversions=conversions,
+                    revenue=round(revenue, 2),
+                    cac=cac,
+                    roas=roas,
+                    targetCac=avg_target,
+                    sparklineData=sparkline_points,
+                )
+            )
+
+        return sorted(results, key=lambda item: item.revenue, reverse=True)

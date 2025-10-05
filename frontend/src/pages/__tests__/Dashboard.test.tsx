@@ -7,6 +7,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../../api/client', () => ({
   analyticsApi: {
     dashboard: vi.fn(),
+    dashboardDaily: vi.fn(),
+    channelPerformance: vi.fn(),
   },
 }));
 
@@ -26,9 +28,13 @@ const renderWithClient = (ui: ReactElement) => {
 };
 
 const mockDashboard = analyticsApi.dashboard as unknown as vi.Mock;
+const mockDashboardDaily = analyticsApi.dashboardDaily as unknown as vi.Mock;
+const mockChannelPerformance = analyticsApi.channelPerformance as unknown as vi.Mock;
 
 afterEach(() => {
   mockDashboard.mockReset();
+  mockDashboardDaily.mockReset();
+  mockChannelPerformance.mockReset();
 });
 
 describe('Dashboard', () => {
@@ -54,6 +60,37 @@ describe('Dashboard', () => {
       },
     });
 
+    mockDashboardDaily.mockResolvedValueOnce({
+      data: [
+        {
+          date: '2025-01-01',
+          conversions: 4,
+          leads: 10,
+          revenue: 14000,
+          spend: 3200,
+          cac: 800,
+          roas: 4.38,
+        },
+      ],
+    });
+
+    mockChannelPerformance.mockResolvedValueOnce({
+      data: [
+        {
+          channel: 'direct',
+          channelName: 'Яндекс.Директ',
+          spend: 5000,
+          leads: 20,
+          conversions: 5,
+          revenue: 18000,
+          cac: 1000,
+          roas: 3.6,
+          targetCac: 800,
+          sparklineData: [],
+        },
+      ],
+    });
+
     renderWithClient(<Dashboard />);
 
     await waitFor(() => {
@@ -68,6 +105,8 @@ describe('Dashboard', () => {
 
   it('показывает сообщение о пустых данных', async () => {
     mockDashboard.mockResolvedValueOnce({ data: null });
+    mockDashboardDaily.mockResolvedValueOnce({ data: [] });
+    mockChannelPerformance.mockResolvedValueOnce({ data: [] });
 
     renderWithClient(<Dashboard />);
 

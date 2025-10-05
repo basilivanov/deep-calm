@@ -374,3 +374,114 @@ def test_campaign_metrics_roas_status(client: TestClient, db_session: Session):
     assert metrics["actual_roas"] is not None
     # Статус должен быть определен
     assert metrics["roas_status"] in ["on_track", "over_target", "under_target", "unknown"]
+
+
+def test_get_dashboard_daily_metrics(client: TestClient, db_session: Session):
+    """Проверяем, что endpoint ежедневных метрик возвращает данные."""
+
+    campaign = Campaign(
+        title="Daily Stats",
+        sku="RELAX-30",
+        budget_rub=10000,
+        target_cac_rub=600,
+        target_roas=3.0,
+        channels=["direct"],
+        status="active",
+        ab_test_enabled=False,
+    )
+    db_session.add(campaign)
+    db_session.flush()
+
+    lead = Lead(
+        phone="+79995555555",
+        utm_source="yandex_direct",
+        utm_medium="cpc",
+        utm_campaign=campaign.title,
+    )
+    db_session.add(lead)
+    db_session.flush()
+
+    conversion = Conversion(
+        campaign_id=campaign.id,
+        lead_id=lead.id,
+        booking_id=555,
+        revenue_rub=4000.0,
+        converted_at=datetime.now(timezone.utc),
+    )
+    db_session.add(conversion)
+    db_session.commit()
+
+    response = client.get("/api/v1/analytics/dashboard/daily")
+    assert response.status_code == 200
+
+    data = response.json()
+    assert isinstance(data, list)
+    assert data, "Ожидаем хотя бы одну точку в ежедневных метриках"
+
+    sample = data[-1]
+    assert "date" in sample
+    assert "conversions" in sample
+    assert "revenue" in sample
+    assert "spend" in sample
+
+
+def test_get_dashboard_channel_performance(client: TestClient, db_session: Session):
+    """Проверяем, что endpoint метрик каналов возвращает агрегацию."""
+
+    campaign = Campaign(
+        title="Channel Stats",
+        sku="DEEP-60",
+        budget_rub=12000,
+        target_cac_rub=700,
+        target_roas=3.5,
+        channels=["vk", "direct"],
+        status="active",
+        ab_test_enabled=False,
+    )
+    db_session.add(campaign)
+    db_session.flush()
+
+    lead_vk = Lead(
+        phone="+79997777777",
+        utm_source="vk_ads",
+        utm_medium="cpc",
+        utm_campaign=campaign.title,
+    )
+    lead_direct = Lead(
+        phone="+79998888888",
+        utm_source="yandex_direct",
+        utm_medium="cpc",
+        utm_campaign=campaign.title,
+    )
+    db_session.add_all([lead_vk, lead_direct])
+    db_session.flush()
+
+    conversion_vk = Conversion(
+        campaign_id=campaign.id,
+        lead_id=lead_vk.id,
+        booking_id=444,
+        revenue_rub=3500.0,
+        channel_code="vk",
+        converted_at=datetime.now(timezone.utc),
+    )
+    conversion_direct = Conversion(
+        campaign_id=campaign.id,
+        lead_id=lead_direct.id,
+        booking_id=333,
+        revenue_rub=3600.0,
+        channel_code="direct",
+        converted_at=datetime.now(timezone.utc),
+    )
+    db_session.add_all([conversion_vk, conversion_direct])
+    db_session.commit()
+
+    response = client.get("/api/v1/analytics/dashboard/channels")
+    assert response.status_code == 200
+
+    data = response.json()
+    assert isinstance(data, list)
+    assert len(data) >= 2
+
+    channel_codes = {item["channel"] for item in data}
+    assert "vk" in channel_codes
+    assert "direct" in channel_codes
