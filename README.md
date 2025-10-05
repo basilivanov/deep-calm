@@ -194,6 +194,13 @@ docker compose exec dc-api pytest --cov=app --cov-report=term-missing
 docker compose exec dc-api pytest tests/integration/test_campaigns_api.py -v
 ```
 
+### Быстрый цикл фронтенда
+
+1. **Локальный hot-reload** — внутри `frontend/` запускаем `npm run dev`. Vite поднимет сервис на `http://localhost:5173` и будет перерисовывать UI при каждом сохранении.
+2. **Подключение к API** — в `frontend/.env.development` по умолчанию `VITE_API_URL=https://dev.dc.vasiliy-ivanov.ru/api`, поэтому локальный фронт ходит в DEV-бэкенд. Если нужен локальный API, поднимаем `docker compose up dc-dev-api` и меняем URL на `http://127.0.0.1:8082/api`.
+3. **Перед пушем** — из каталога `frontend/` выполняем `npm run lint`, `npm run test`, при необходимости `npm run build`, чтобы поймать ошибки Tailwind/TypeScript.
+4. **PR-превью** — каждый пуш в ветку с PR собирает фронт (`vite build`) и публикует статику на `https://pr-<id>.dev.dc.vasiliy-ivanov.ru`; ссылка прилетает ботом в комментарии PR.
+
 ### Работа с миграциями
 
 ```bash
