@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Settings, CheckCircle, AlertCircle, Key, RefreshCw, Shield, Link2, Activity, TrendingUp } from 'lucide-react';
+import { Settings, CheckCircle, AlertCircle, Key, RefreshCw, Shield, Activity } from 'lucide-react';
 import { GlassCard } from '../components/ui/GlassCard';
 import { MetricCardEnhanced } from '../components/ui/MetricCardEnhanced';
 import { StatusPill } from '../components/ui/StatusPill';
-import { Button } from '../components/ui/Button';
 import { integrationsApi } from '../api/client';
 
 interface Integration {

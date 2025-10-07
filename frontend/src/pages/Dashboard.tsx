@@ -254,7 +254,10 @@ export function Dashboard({ onNavigate }: DashboardProps) {
               Динамика метрик
             </h3>
             {chartDailyData && chartDailyData.length > 0 ? (
-              <MetricChart data={chartDailyData} />
+              <MetricChart
+                data={chartDailyData}
+                metrics={['cac', 'roas', 'conversions', 'revenue', 'spend']}
+              />
             ) : (
               <div className="h-64 flex items-center justify-center text-gray-500">
                 <div className="text-center">

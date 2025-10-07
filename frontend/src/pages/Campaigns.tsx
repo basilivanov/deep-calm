@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Play, Pause, Edit, Trash2, Eye, Target, DollarSign, Activity, TrendingUp } from 'lucide-react';
+import { Plus, Play, Pause, Edit, Trash2, Eye, Target, DollarSign, Activity } from 'lucide-react';
 import { campaignsApi, type Campaign } from '../api/client';
 import { GlassCard } from '../components/ui/GlassCard';
 import { MetricCardEnhanced } from '../components/ui/MetricCardEnhanced';
 import { StatusPill } from '../components/ui/StatusPill';
-import { Button } from '../components/ui/Button';
 import { CampaignForm } from '../components/CampaignForm';
 
 export function Campaigns() {

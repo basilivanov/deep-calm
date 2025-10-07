@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import { useMemo } from 'react'
 
 interface ProgressRingProps {
   value: number
@@ -25,14 +25,14 @@ export function ProgressRing({
   animate = true,
   className = ''
 }: ProgressRingProps) {
-  const { percentage, circumference, strokeDasharray, strokeDashoffset } = useMemo(() => {
+  const { percentage, strokeDasharray, strokeDashoffset } = useMemo(() => {
     const percentage = Math.min(Math.max((value / max) * 100, 0), 100)
     const radius = (size - strokeWidth) / 2
     const circumference = radius * 2 * Math.PI
     const strokeDasharray = circumference
     const strokeDashoffset = circumference - (percentage / 100) * circumference
 
-    return { percentage, circumference, strokeDasharray, strokeDashoffset }
+    return { percentage, strokeDasharray, strokeDashoffset }
   }, [value, max, size, strokeWidth])
 
   const center = size / 2

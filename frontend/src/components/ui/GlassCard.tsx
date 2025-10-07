@@ -1,5 +1,4 @@
 import React from 'react'
-import { Card } from './Card'
 import { clsx } from 'clsx'
 
 interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
