@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
+import { Card, CardHeader, CardContent } from './ui/Card';
 
 interface MetricCardProps {
   title: string;
@@ -14,25 +14,31 @@ interface MetricCardProps {
 
 export function MetricCard({ title, value, subtitle, icon, trend }: MetricCardProps) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-dc-primary">
-          {title}
-        </CardTitle>
-        {icon && <div className="text-dc-accent">{icon}</div>}
+    <Card className="h-full">
+      <CardHeader className="flex items-center justify-between pb-1">
+        <div>
+          <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-dc-neutral">
+            {title}
+          </p>
+        </div>
+        {icon && (
+          <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-dc-border bg-dc-bg text-dc-primary">
+            {icon}
+          </div>
+        )}
       </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold text-dc-ink">
+      <CardContent className="flex flex-col gap-3 pt-5">
+        <div className="text-3xl font-semibold leading-tight text-dc-ink">
           {value}
         </div>
         {subtitle && (
-          <p className="text-xs text-dc-primary/60 mt-1">
+          <p className="text-sm text-dc-neutral-600">
             {subtitle}
           </p>
         )}
         {trend && (
-          <p className={`text-xs mt-1 ${trend.isPositive ? 'text-dc-success' : 'text-dc-error'}`}>
-            {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
+          <p className={`mt-3 text-xs font-medium ${trend.isPositive ? 'text-dc-success-600' : 'text-dc-danger-500'}`}>
+            {trend.isPositive ? '▲' : '▼'} {Math.abs(trend.value)}%
           </p>
         )}
       </CardContent>

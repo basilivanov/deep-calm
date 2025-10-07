@@ -20,6 +20,6 @@ describe('MetricCard', () => {
     );
 
     expect(screen.getByText('из 50 000 ₽ (60%)')).toBeInTheDocument();
-    expect(screen.getByText('↑ 15%')).toBeInTheDocument();
+    expect(screen.getByText('▲ 15%')).toBeInTheDocument();
   });
 });

@@ -93,14 +93,15 @@ describe('Dashboard', () => {
 
     renderWithClient(<Dashboard />);
 
-    await waitFor(() => {
-      expect(screen.getByText('CAC текущий')).toBeInTheDocument();
-    });
+    const pausedBadges = await screen.findAllByText('4 на паузе');
+    expect(pausedBadges.length).toBeGreaterThan(0);
 
     // Проверяем основные элементы
     expect(screen.getByText('⚠️ Требуется внимание')).toBeInTheDocument();
-    expect(screen.getByText('Маркетинговая панель')).toBeInTheDocument();
-    expect(screen.getByText('Ключевые метрики по воронкам и окупаемости рекламы')).toBeInTheDocument();
+    expect(screen.getByText('Центр управления маркетингом DeepCalm')).toBeInTheDocument();
+    expect(
+      screen.getByText('Следим за окупаемостью каналов, динамикой бюджетов и конверсиями в одном окне. Все метрики обновляются автоматически каждые 30 секунд.'),
+    ).toBeInTheDocument();
   });
 
   it('показывает сообщение о пустых данных', async () => {
@@ -110,8 +111,6 @@ describe('Dashboard', () => {
 
     renderWithClient(<Dashboard />);
 
-    await waitFor(() => {
-      expect(screen.getByText('Пока нет данных для отображения')).toBeInTheDocument();
-    });
+    await screen.findByText('Данных для дашборда пока нет — запустите кампании, и статистика появится автоматически.');
   });
 });

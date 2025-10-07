@@ -1,21 +1,88 @@
-import { useQuery } from '@tanstack/react-query';
-import { TrendingUp, Users, DollarSign, Target, AlertTriangle, CheckCircle } from 'lucide-react';
-import type { DashboardSummary } from '../api/client';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  TrendingUp,
+  Users,
+  DollarSign,
+  Target,
+  Activity
+} from 'lucide-react';
+import type { DashboardSummary, DailyMetricPoint, ChannelPerformanceItem } from '../api/client';
 import { analyticsApi } from '../api/client';
-import { MetricCard } from '../components/MetricCard';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { MetricChart } from '../components/charts/MetricChart';
 import { RevenueSpeedometer } from '../components/charts/RevenueSpeedometer';
 import { ChannelPerformance } from '../components/charts/ChannelPerformance';
 
-export function Dashboard() {
-  const { data: summary, isLoading } = useQuery<DashboardSummary>({
+interface DashboardProps {
+  onNavigate?: (page: 'dashboard' | 'campaigns' | 'integrations' | 'analyst') => void;
+}
+
+const EMPTY_SUMMARY: DashboardSummary = {
+  total_campaigns: 0,
+  active_campaigns: 0,
+  paused_campaigns: 0,
+  total_budget_rub: 0,
+  total_spent_rub: 0,
+  budget_utilization: 0,
+  total_leads: 0,
+  total_conversions: 0,
+  total_revenue_rub: 0,
+  avg_cac_rub: null,
+  avg_roas: null,
+  top_performing_campaign: null,
+};
+
+// Simple Metric Card Component
+function MetricCard({ title, value, subtitle, icon: Icon, className = "" }: {
+  title: string;
+  value: string | number;
+  subtitle?: string;
+  icon: any;
+  className?: string;
+}) {
+  return (
+    <div className={`bg-white overflow-hidden shadow rounded-lg ${className}`}>
+      <div className="p-5">
+        <div className="flex items-center">
+          <div className="flex-shrink-0">
+            <Icon className="h-6 w-6 text-gray-400" />
+          </div>
+          <div className="ml-5 w-0 flex-1">
+            <dl>
+              <dt className="text-sm font-medium text-gray-500 truncate">
+                {title}
+              </dt>
+              <dd className="text-lg font-medium text-gray-900">
+                {value}
+              </dd>
+            </dl>
+          </div>
+        </div>
+        {subtitle && (
+          <div className="mt-3">
+            <div className="text-sm text-gray-500">
+              {subtitle}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function Dashboard({ onNavigate }: DashboardProps) {
+  const queryClient = useQueryClient();
+
+  const {
+    data: summary,
+    isLoading,
+    isError,
+  } = useQuery<DashboardSummary>({
     queryKey: ['dashboard-summary'],
     queryFn: async () => {
       const response = await analyticsApi.dashboard();
       return response.data;
     },
-    refetchInterval: 30000, // Обновление каждые 30 сек
+    refetchInterval: 30000,
   });
 
   const { data: dailyMetrics } = useQuery<DailyMetricPoint[]>({
@@ -36,247 +103,243 @@ export function Dashboard() {
     refetchInterval: 300000,
   });
 
-  if (isLoading) {
-    return (
-      <div className="py-24 flex items-center justify-center">
-        <div className="text-base font-medium text-dc-neutral">Загружаем свежие показатели…</div>
-      </div>
-    );
-  }
+  const showEmpty = !isLoading && !isError && !summary;
+  const isReady = Boolean(summary) && !isLoading && !isError;
+  const effectiveSummary = summary ?? EMPTY_SUMMARY;
 
-  if (!summary) {
-    return (
-      <div className="py-24 flex items-center justify-center">
-        <div className="text-base font-medium text-dc-neutral">Пока нет данных для отображения</div>
-      </div>
-    );
-  }
-
-  const formatRub = (value: number) => {
-    return new Intl.NumberFormat('ru-RU', {
+  const formatRub = (value: number) =>
+    new Intl.NumberFormat('ru-RU', {
       style: 'currency',
       currency: 'RUB',
       minimumFractionDigits: 0,
     }).format(value);
+
+  const chartDailyData = dailyMetrics?.map((point) => ({
+    ...point,
+    cac: point.cac ?? undefined,
+    roas: point.roas ?? undefined,
+  }));
+
+  const handleCreateCampaign = () => {
+    if (onNavigate) {
+      onNavigate('campaigns');
+    }
   };
 
+  const handleRefreshData = () => {
+    queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
+    queryClient.invalidateQueries({ queryKey: ['dashboard-daily-metrics'] });
+    queryClient.invalidateQueries({ queryKey: ['dashboard-channel-performance'] });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-sm text-gray-500">Загружаем данные...</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="py-8 space-y-8">
-      <div className="space-y-1">
-        <p className="text-xs uppercase tracking-[0.24em] text-dc-neutral">Обзор</p>
-        <h1 className="text-3xl font-semibold text-dc-primary">Маркетинговая панель</h1>
-        <p className="text-sm text-dc-neutral">Ключевые метрики по воронкам и окупаемости рекламы</p>
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <div className="md:flex md:items-center md:justify-between">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+              Dashboard
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Обзор ключевых метрик и показателей эффективности
+            </p>
+          </div>
+          <div className="mt-4 flex md:mt-0 md:ml-4">
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              isReady ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+            }`}>
+              {isReady ? 'Данные загружены' : 'Загрузка...'}
+            </span>
+          </div>
+        </div>
       </div>
 
-      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="CAC текущий"
-          value={summary.avg_cac_rub ? formatRub(summary.avg_cac_rub) : '—'}
+          value={effectiveSummary.avg_cac_rub ? formatRub(effectiveSummary.avg_cac_rub) : '—'}
           subtitle={
-            summary.avg_cac_rub
-              ? summary.avg_cac_rub <= 500
-                ? '✅ В пределах цели'
+            effectiveSummary.avg_cac_rub
+              ? effectiveSummary.avg_cac_rub <= 500
+                ? '✅ В пределах нормы'
                 : '⚠️ Выше целевого'
               : 'Нет данных'
           }
-          icon={<DollarSign className="w-4 h-4" />}
+          icon={DollarSign}
         />
 
         <MetricCard
-          title="ROAS"
-          value={summary.avg_roas ? summary.avg_roas.toFixed(1) : '—'}
-          subtitle={
-            summary.avg_roas
-              ? summary.avg_roas >= 5
-                ? '✅ Отличный результат'
-                : summary.avg_roas >= 3
-                  ? '⚠️ Требуется внимание'
-                  : '❌ Ниже плана'
-              : 'Нет конверсий'
-          }
-          icon={<TrendingUp className="w-4 h-4" />}
+          title="Активные кампании"
+          value={`${effectiveSummary.active_campaigns}`}
+          subtitle={`Всего: ${effectiveSummary.total_campaigns} | На паузе: ${effectiveSummary.paused_campaigns}`}
+          icon={Target}
         />
 
         <MetricCard
-          title="Конверсии сегодня"
-          value={summary.total_conversions}
+          title="Конверсии"
+          value={effectiveSummary.total_conversions.toLocaleString('ru-RU')}
           subtitle={
-            summary.total_leads > 0
-              ? `CR: ${((summary.total_conversions / summary.total_leads) * 100).toFixed(1)}%`
+            effectiveSummary.total_leads > 0
+              ? `CR: ${((effectiveSummary.total_conversions / effectiveSummary.total_leads) * 100).toFixed(1)}%`
               : 'Нет лидов'
           }
-          icon={<Users className="w-4 h-4" />}
+          icon={Users}
         />
 
         <MetricCard
-          title="Кампании"
-          value={`${summary.active_campaigns} / ${summary.total_campaigns}`}
-          subtitle={`${summary.paused_campaigns} на паузе`}
-          icon={<Target className="w-4 h-4" />}
+          title="ROAS средний"
+          value={effectiveSummary.avg_roas ? effectiveSummary.avg_roas.toFixed(1) : '—'}
+          subtitle={effectiveSummary.avg_roas ? 'Рентабельность рекламы' : 'Нет данных'}
+          icon={TrendingUp}
         />
-      </section>
+      </div>
 
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-4">
-          <RevenueSpeedometer
-            current={summary.total_revenue_rub}
-            target={100000}
-            label="Выручка за месяц"
-          />
+      {/* Revenue Section */}
+      <div className="bg-white shadow rounded-lg">
+        <div className="px-4 py-5 sm:p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+            <div>
+              <h3 className="text-lg leading-6 font-medium text-gray-900">
+                Выручка за месяц
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Цель: 100,000₽ | Текущая: {formatRub(effectiveSummary.total_revenue_rub)}
+              </p>
+              <div className="mt-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500">Прогресс к цели</span>
+                  <span className="font-medium text-gray-900">
+                    {Math.round((effectiveSummary.total_revenue_rub / 100000) * 100)}%
+                  </span>
+                </div>
+                <div className="mt-2">
+                  <div className="bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-indigo-600 h-2 rounded-full transition-all duration-500"
+                      style={{
+                        width: `${Math.min((effectiveSummary.total_revenue_rub / 100000) * 100, 100)}%`
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-center">
+              <RevenueSpeedometer
+                current={effectiveSummary.total_revenue_rub}
+                target={100000}
+                label="Выручка за месяц"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Daily Metrics Chart */}
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-4 py-5 sm:p-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+              Динамика метрик
+            </h3>
+            {chartDailyData && chartDailyData.length > 0 ? (
+              <MetricChart data={chartDailyData} />
+            ) : (
+              <div className="h-64 flex items-center justify-center text-gray-500">
+                <div className="text-center">
+                  <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Недостаточно данных для графика</p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                {summary.avg_cac_rub && summary.avg_cac_rub <= 500 ? (
-                  <CheckCircle className="w-4 h-4 text-dc-success-500" />
-                ) : (
-                  <AlertTriangle className="w-4 h-4 text-dc-warning-500" />
-                )}
-                Статус кампаний
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-dc-neutral-600">CAC</span>
-                <span className={`font-medium ${summary.avg_cac_rub && summary.avg_cac_rub <= 500 ? 'text-dc-success-700' : 'text-dc-warning-700'}`}>
-                  {summary.avg_cac_rub ? `${summary.avg_cac_rub.toFixed(0)}₽ / 500₽` : '—'}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-dc-neutral-600">ROAS</span>
-                <span className={`font-medium ${summary.avg_roas && summary.avg_roas >= 5 ? 'text-dc-success-700' : 'text-dc-warning-700'}`}>
-                  {summary.avg_roas ? `${summary.avg_roas.toFixed(1)} / 5.0` : '—'}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-dc-neutral-600">Активных кампаний</span>
-                <span className="font-medium text-dc-ink">{summary.active_campaigns}</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Использование бюджета</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-dc-neutral-600">Потрачено</span>
-                  <span className="text-dc-ink font-medium">{formatRub(summary.total_spent_rub)}</span>
-                </div>
-                <div className="h-2 w-full rounded-full bg-dc-warm-300/80">
-                  <div
-                    className="h-2 rounded-full bg-dc-accent"
-                    style={{ width: `${Math.min(summary.budget_utilization, 100)}%` }}
-                  />
-                </div>
-                <div className="text-xs text-dc-neutral-500 mt-1">
-                  {summary.budget_utilization.toFixed(1)}% от доступного бюджета
+        {/* Channel Performance */}
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-4 py-5 sm:p-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+              Каналы привлечения
+            </h3>
+            {channelData && channelData.length > 0 ? (
+              <ChannelPerformance data={channelData} />
+            ) : (
+              <div className="h-64 flex items-center justify-center text-gray-500">
+                <div className="text-center">
+                  <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Нет данных по каналам</p>
                 </div>
               </div>
-              <div className="text-sm text-dc-neutral-600">
-                Общий бюджет: <span className="font-medium text-dc-ink">{formatRub(summary.total_budget_rub)}</span>
-              </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
         </div>
-      </section>
+      </div>
 
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>CAC и ROAS за 30 дней</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {dailyMetrics && (
-              <MetricChart data={dailyMetrics} metrics={['cac', 'roas']} height={250} />
-            )}
-          </CardContent>
-        </Card>
+      {/* Quick Actions */}
+      <div className="bg-white shadow rounded-lg">
+        <div className="px-4 py-5 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-lg leading-6 font-medium text-gray-900">
+                Быстрые действия
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Основные операции для управления кампаниями
+              </p>
+            </div>
+            <div className="mt-4 sm:mt-0 sm:ml-4 flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={handleCreateCampaign}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Создать кампанию
+              </button>
+              <button
+                onClick={handleRefreshData}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Обновить данные
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Конверсии и выручка</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {dailyMetrics && (
-              <MetricChart data={dailyMetrics} metrics={['conversions', 'revenue']} height={250} />
-            )}
-          </CardContent>
-        </Card>
-      </section>
-
-      {channelData && (
-        <Card className="border border-dc-border shadow-sm">
-          <CardHeader className="pb-0">
-            <CardTitle className="text-dc-ink">Каналы</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <ChannelPerformance data={channelData} />
-          </CardContent>
-        </Card>
+      {/* Empty State */}
+      {showEmpty && (
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-4 py-12 sm:px-6 text-center">
+            <div className="mx-auto h-12 w-12 text-gray-400">
+              <Target className="h-12 w-12" />
+            </div>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">
+              Начните с первой кампании
+            </h3>
+            <p className="mt-1 text-sm text-gray-500 max-w-md mx-auto">
+              Данных для дашборда пока нет. Запустите кампании, и статистика появится автоматически.
+            </p>
+            <div className="mt-6">
+              <button
+                onClick={handleCreateCampaign}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Создать кампанию
+              </button>
+            </div>
+          </div>
+        </div>
       )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Топ кампаний по ROAS</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {summary.top_performing_campaign ? (
-            <div className="space-y-4">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-4 bg-dc-warm-100 rounded-lg">
-                <div>
-                  <h4 className="font-semibold text-dc-ink">
-                    🏆 {summary.top_performing_campaign.campaign_title}
-                  </h4>
-                  <p className="text-sm text-dc-neutral-600 mt-1">Лучший ROAS за период</p>
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-dc-success-700">
-                    {summary.top_performing_campaign.roas.toFixed(1)}
-                  </div>
-                  <div className="text-xs text-dc-neutral-600 uppercase tracking-wide">ROAS</div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-dc-warm-200">
-                <div className="text-center">
-                  <div className="text-sm text-dc-neutral-600">Средний CAC</div>
-                  <div className="text-xl font-bold text-dc-ink mt-1">
-                    {summary.avg_cac_rub ? formatRub(summary.avg_cac_rub) : '—'}
-                  </div>
-                  <div className="text-xs text-dc-neutral-500 mt-1">Цель ≤ 500₽</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-sm text-dc-neutral-600">Средний ROAS</div>
-                  <div className="text-xl font-bold text-dc-ink mt-1">
-                    {summary.avg_roas ? summary.avg_roas.toFixed(1) : '—'}
-                  </div>
-                  <div className="text-xs text-dc-neutral-500 mt-1">Цель ≥ 5.0</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-sm text-dc-neutral-600">Conversion Rate</div>
-                  <div className="text-xl font-bold text-dc-ink mt-1">
-                    {summary.total_leads > 0
-                      ? `${((summary.total_conversions / summary.total_leads) * 100).toFixed(1)}%`
-                      : '—'}
-                  </div>
-                  <div className="text-xs text-dc-neutral-500 mt-1">Цель ≥ 10%</div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-dc-neutral-500">
-              <TrendingUp className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>Нет данных о кампаниях</p>
-              <p className="text-sm mt-1">Запустите первую кампанию для анализа</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }
