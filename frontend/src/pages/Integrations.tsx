@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Settings, CheckCircle, AlertCircle, ExternalLink, Key, RefreshCw, Shield } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
+import { Settings, CheckCircle, AlertCircle, Key, RefreshCw, Shield, Activity } from 'lucide-react';
+import { GlassCard } from '../components/ui/GlassCard';
+import { MetricCardEnhanced } from '../components/ui/MetricCardEnhanced';
+import { StatusPill } from '../components/ui/StatusPill';
 import { integrationsApi } from '../api/client';
 
 interface Integration {
@@ -87,14 +88,6 @@ export function Integrations() {
     },
   });
 
-  const getStatusIcon = (status: Integration['status']) => {
-    switch (status) {
-      case 'connected': return <CheckCircle className="w-5 h-5 text-dc-success-500" />;
-      case 'error': return <AlertCircle className="w-5 h-5 text-dc-danger-500" />;
-      case 'pending': return <RefreshCw className="w-5 h-5 text-dc-warning-500 animate-spin" />;
-      default: return <AlertCircle className="w-5 h-5 text-dc-neutral-400" />;
-    }
-  };
 
   const getStatusText = (status: Integration['status']) => {
     switch (status) {
@@ -105,14 +98,6 @@ export function Integrations() {
     }
   };
 
-  const getStatusColor = (status: Integration['status']) => {
-    switch (status) {
-      case 'connected': return 'text-dc-success-700 bg-dc-success-100';
-      case 'error': return 'text-dc-danger-700 bg-dc-danger-100';
-      case 'pending': return 'text-dc-warning-700 bg-dc-warning-100';
-      default: return 'text-dc-neutral-600 bg-dc-neutral-100';
-    }
-  };
 
   const formatLastSync = (date?: string) => {
     if (!date) return 'Никогда';
@@ -127,204 +112,233 @@ export function Integrations() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-xl text-gray-600">Загрузка...</div>
+      <div className="flex min-h-[320px] items-center justify-center">
+        <div className="text-sm font-medium text-dc-neutral">Загружаем интеграции…</div>
       </div>
     );
   }
 
+  const connected = integrations.filter((i: Integration) => i.status === 'connected').length;
+  const errored = integrations.filter((i: Integration) => i.status === 'error').length;
+  const activeAds = integrations.filter((i: Integration) => ['vk', 'direct', 'avito'].includes(i.type) && i.status === 'connected').length;
+
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-dc-primary">
-          Интеграции
-        </h1>
-        <p className="text-dc-primary/70 mt-1">
-          Управление подключениями к рекламным платформам и сервисам
-        </p>
+    <div className="space-y-12">
+      {/* Header Section */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-dc-primary">
+              Интеграции
+            </h1>
+            <p className="text-dc-neutral-600 mt-2">
+              Подключайте рекламные платформы, CRM и аналитические сервисы
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-dc-neutral-600">Всего интеграций</p>
-                <p className="text-2xl font-bold text-dc-ink">
-                  {integrations.length}
-                </p>
-              </div>
-              <Settings className="w-8 h-8 text-dc-primary-400" />
-            </div>
-          </CardContent>
-        </Card>
+      {/* Statistics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <MetricCardEnhanced
+          title="Всего интеграций"
+          value={integrations.length.toString()}
+          subtitle={`${connected} подключено`}
+          icon={Settings}
+          progress={{
+            value: connected,
+            max: Math.max(integrations.length, 1),
+            label: 'Подключено'
+          }}
+          variant="glass"
+        />
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-dc-neutral-600">Подключено</p>
-                <p className="text-2xl font-bold text-dc-success-600">
-                  {integrations.filter((i: Integration) => i.status === 'connected').length}
-                </p>
-              </div>
-              <CheckCircle className="w-8 h-8 text-dc-success-400" />
-            </div>
-          </CardContent>
-        </Card>
+        <MetricCardEnhanced
+          title="Подключено"
+          value={connected.toString()}
+          subtitle="Активные интеграции"
+          icon={CheckCircle}
+          status={{
+            type: connected >= integrations.length - 1 ? 'success' : 'warning',
+            text: connected >= integrations.length - 1 ? 'Все подключены' : 'Есть отключенные'
+          }}
+          variant="warm"
+        />
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-dc-neutral-600">Ошибки</p>
-                <p className="text-2xl font-bold text-dc-danger-600">
-                  {integrations.filter((i: Integration) => i.status === 'error').length}
-                </p>
-              </div>
-              <AlertCircle className="w-8 h-8 text-dc-danger-400" />
-            </div>
-          </CardContent>
-        </Card>
+        <MetricCardEnhanced
+          title="Активные каналы"
+          value={activeAds.toString()}
+          subtitle="VK, Директ, Avito"
+          icon={Activity}
+          variant="gradient"
+        />
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-dc-neutral-600">Активных каналов</p>
-                <p className="text-2xl font-bold text-dc-accent-600">
-                  {integrations.filter((i: Integration) => ['vk', 'direct', 'avito'].includes(i.type) && i.status === 'connected').length}
-                </p>
-              </div>
-              <ExternalLink className="w-8 h-8 text-dc-accent-400" />
-            </div>
-          </CardContent>
-        </Card>
+        <MetricCardEnhanced
+          title="Ошибок"
+          value={errored.toString()}
+          subtitle="Требуют внимания"
+          icon={AlertCircle}
+          status={{
+            type: errored === 0 ? 'success' : 'error',
+            text: errored === 0 ? 'Все работает' : 'Есть проблемы'
+          }}
+          variant="glass"
+        />
       </div>
 
       {/* Integrations Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {integrations.map((integration: Integration) => (
-          <Card key={integration.id} className="relative">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold"
-                    style={{ backgroundColor: integration.color }}
-                  >
-                    {integration.icon}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {integrations.map((integration: Integration) => {
+          const getStatusType = (status: Integration['status']) => {
+            switch (status) {
+              case 'connected': return 'success';
+              case 'error': return 'error';
+              case 'pending': return 'warning';
+              default: return 'neutral';
+            }
+          };
+
+          return (
+            <GlassCard key={integration.id} variant="warm" className="hover:-translate-y-1 hover:scale-[1.01] transition-all duration-300">
+              <div className="space-y-6">
+                {/* Header */}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div
+                      className="flex h-12 w-12 items-center justify-center rounded-xl text-white shadow-lg font-bold"
+                      style={{ backgroundColor: integration.color }}
+                    >
+                      {integration.icon}
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-dc-primary">{integration.name}</h3>
+                      <p className="text-sm text-dc-neutral-600 mt-1">{integration.description}</p>
+                    </div>
+                  </div>
+                  <StatusPill
+                    status={getStatusType(integration.status)}
+                    text={getStatusText(integration.status)}
+                    variant="soft"
+                  />
+                </div>
+
+                {/* Details */}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <span className="text-xs uppercase tracking-[0.15em] text-dc-neutral-600 font-medium">
+                      Последняя синхронизация
+                    </span>
+                    <p className="mt-1 text-sm font-semibold text-dc-primary">
+                      {formatLastSync(integration.lastSync)}
+                    </p>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-dc-ink">{integration.name}</h3>
-                    <p className="text-sm text-dc-neutral-600">{integration.description}</p>
+                    <span className="text-xs uppercase tracking-[0.15em] text-dc-neutral-600 font-medium">
+                      Тип подключения
+                    </span>
+                    <p className="mt-1 text-sm font-semibold text-dc-primary">
+                      {integration.type.toUpperCase()}
+                    </p>
                   </div>
                 </div>
-                {getStatusIcon(integration.status)}
-              </CardTitle>
-            </CardHeader>
 
-            <CardContent className="space-y-4">
-              {/* Status */}
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-dc-neutral-600">Статус:</span>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(integration.status)}`}>
-                  {getStatusText(integration.status)}
-                </span>
-              </div>
-
-              {/* Last Sync */}
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-dc-neutral-600">Последняя синхронизация:</span>
-                <span className="text-sm text-dc-ink">{formatLastSync(integration.lastSync)}</span>
-              </div>
-
-              {/* Error Message */}
-              {integration.status === 'error' && integration.errorMessage && (
-                <div className="p-3 bg-dc-danger-50 border border-dc-danger-200 rounded-lg">
-                  <p className="text-sm text-dc-danger-700">
-                    <AlertCircle className="w-4 h-4 inline mr-2" />
-                    {integration.errorMessage}
-                  </p>
-                </div>
-              )}
-
-              {/* Settings */}
-              {integration.status === 'connected' && integration.settings && (
-                <div className="space-y-2">
-                  {Object.entries(integration.settings).map(([key, value]) => (
-                    <div key={key} className="flex items-center justify-between text-sm">
-                      <span className="text-dc-neutral-600 capitalize">{key.replace('_', ' ')}:</span>
-                      <span className="text-dc-ink font-mono">{String(value)}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Actions */}
-              <div className="flex gap-2 pt-2">
-                {integration.status === 'connected' ? (
-                  <>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => syncMutation.mutate(integration.type)}
-                      disabled={syncMutation.isPending}
-                      className="flex items-center gap-2"
-                    >
-                      <RefreshCw className={`w-4 h-4 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
-                      Синхронизировать
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => disconnectMutation.mutate(integration.type)}
-                      disabled={disconnectMutation.isPending}
-                      className="text-dc-danger-600 hover:text-dc-danger-700"
-                    >
-                      Отключить
-                    </Button>
-                  </>
-                ) : (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => {
-                      if (integration.type === 'yclients') {
-                        // OAuth flow для YCLIENTS
-                        window.open('/api/v1/integrations/yclients/auth', '_blank');
-                      } else {
-                        setShowTokenForm(integration.type);
-                      }
-                    }}
-                    className="flex items-center gap-2"
-                  >
-                    <Key className="w-4 h-4" />
-                    Подключить
-                  </Button>
+                {/* Error Message */}
+                {integration.status === 'error' && integration.errorMessage && (
+                  <div className="rounded-xl border border-dc-danger-300/60 bg-dc-danger-100/60 p-4">
+                    <p className="text-sm text-dc-danger-700 flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      {integration.errorMessage}
+                    </p>
+                  </div>
                 )}
+
+                {/* Settings */}
+                {integration.status === 'connected' && integration.settings && (
+                  <div className="space-y-3">
+                    <span className="text-xs uppercase tracking-[0.15em] text-dc-neutral-600 font-medium">
+                      Настройки
+                    </span>
+                    <div className="grid gap-2">
+                      {Object.entries(integration.settings).map(([key, value]) => (
+                        <div key={key} className="flex items-center justify-between rounded-xl border border-dc-warm-400/60 bg-dc-warm-100/60 px-3 py-2">
+                          <dt className="text-dc-neutral-700 capitalize font-medium">
+                            {key.replace('_', ' ')}:
+                          </dt>
+                          <dd className="font-mono text-dc-primary text-sm">
+                            {String(value)}
+                          </dd>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex flex-wrap gap-3 pt-2">
+                  {integration.status === 'connected' ? (
+                    <>
+                      <button
+                        onClick={() => syncMutation.mutate(integration.type)}
+                        disabled={syncMutation.isPending}
+                        className="px-4 py-2 bg-dc-accent-500 text-white rounded-xl font-medium hover:bg-dc-accent-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+                      >
+                        <RefreshCw className={`h-4 w-4 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
+                        Синхронизировать
+                      </button>
+                      <button
+                        onClick={() => disconnectMutation.mutate(integration.type)}
+                        disabled={disconnectMutation.isPending}
+                        className="px-4 py-2 border border-dc-danger-300/60 text-dc-danger-600 rounded-xl font-medium hover:bg-dc-danger-100/60 transition-colors disabled:opacity-50"
+                      >
+                        Отключить
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        if (integration.type === 'yclients') {
+                          window.open('/api/v1/integrations/yclients/auth', '_blank');
+                        } else {
+                          setShowTokenForm(integration.type);
+                        }
+                      }}
+                      className="px-4 py-2 bg-gradient-to-r from-dc-accent-500 to-dc-primary-500 text-white rounded-xl font-medium hover:scale-105 transition-transform shadow-lg flex items-center gap-2"
+                    >
+                      <Key className="h-4 w-4" />
+                      Подключить
+                    </button>
+                  )}
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        ))}
+            </GlassCard>
+          );
+        })}
       </div>
 
       {/* Token Input Modal */}
       {showTokenForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="w-5 h-5" />
-                  Подключение {integrations.find((i: Integration) => i.type === showTokenForm)?.name}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-dc-ink mb-2">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="max-w-md w-full">
+            <GlassCard variant="glass">
+              <div className="space-y-6">
+                {/* Header */}
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-dc-accent-100 text-dc-accent-600">
+                    <Shield className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-dc-primary">
+                      Подключение {integrations.find((i: Integration) => i.type === showTokenForm)?.name}
+                    </h3>
+                    <p className="text-sm text-dc-neutral-600">
+                      Введите API токен для подключения
+                    </p>
+                  </div>
+                </div>
+
+                {/* Token Input */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-dc-primary">
                     API токен
                   </label>
                   <input
@@ -332,64 +346,64 @@ export function Integrations() {
                     value={tokenInput}
                     onChange={(e) => setTokenInput(e.target.value)}
                     placeholder="Введите API токен..."
-                    className="w-full p-3 border border-dc-warm-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-dc-accent-500 focus:border-transparent"
+                    className="w-full p-3 border border-dc-warm-400/60 bg-dc-warm-50/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-dc-accent-500 focus:border-transparent text-dc-primary"
                   />
-                  <p className="text-xs text-dc-neutral-600 mt-1">
+                  <p className="text-xs text-dc-neutral-600">
                     Токен будет зашифрован и сохранен безопасно
                   </p>
                 </div>
 
                 {/* Instructions */}
-                <div className="p-3 bg-dc-warm-50 rounded-lg">
-                  <p className="text-sm text-dc-ink font-medium mb-2">
+                <div className="p-4 bg-dc-warm-100/60 rounded-xl border border-dc-warm-400/60">
+                  <p className="text-sm text-dc-primary font-semibold mb-3">
                     Как получить токен:
                   </p>
                   {showTokenForm === 'direct' && (
-                    <ol className="text-sm text-dc-neutral-700 space-y-1 list-decimal list-inside">
-                      <li>Войдите в <a href="https://direct.yandex.ru" target="_blank" className="text-dc-accent-600 hover:underline">Яндекс.Директ</a></li>
+                    <ol className="text-sm text-dc-neutral-700 space-y-2 list-decimal list-inside">
+                      <li>Войдите в <a href="https://direct.yandex.ru" target="_blank" className="text-dc-accent-600 hover:underline font-medium">Яндекс.Директ</a></li>
                       <li>Перейдите в настройки → API</li>
                       <li>Создайте новое приложение</li>
                       <li>Скопируйте токен доступа</li>
                     </ol>
                   )}
                   {showTokenForm === 'vk' && (
-                    <ol className="text-sm text-dc-neutral-700 space-y-1 list-decimal list-inside">
-                      <li>Войдите в <a href="https://vk.com/dev" target="_blank" className="text-dc-accent-600 hover:underline">VK Developers</a></li>
+                    <ol className="text-sm text-dc-neutral-700 space-y-2 list-decimal list-inside">
+                      <li>Войдите в <a href="https://vk.com/dev" target="_blank" className="text-dc-accent-600 hover:underline font-medium">VK Developers</a></li>
                       <li>Создайте standalone приложение</li>
                       <li>Получите токен с правами ads</li>
                     </ol>
                   )}
                   {showTokenForm === 'metrika' && (
-                    <ol className="text-sm text-dc-neutral-700 space-y-1 list-decimal list-inside">
-                      <li>Войдите в <a href="https://oauth.yandex.ru" target="_blank" className="text-dc-accent-600 hover:underline">Яндекс.OAuth</a></li>
+                    <ol className="text-sm text-dc-neutral-700 space-y-2 list-decimal list-inside">
+                      <li>Войдите в <a href="https://oauth.yandex.ru" target="_blank" className="text-dc-accent-600 hover:underline font-medium">Яндекс.OAuth</a></li>
                       <li>Зарегистрируйте приложение</li>
                       <li>Получите токен с доступом к Метрике</li>
                     </ol>
                   )}
                 </div>
 
+                {/* Actions */}
                 <div className="flex gap-3">
-                  <Button
-                    variant="primary"
+                  <button
                     onClick={() => connectMutation.mutate({ type: showTokenForm, token: tokenInput })}
                     disabled={!tokenInput.trim() || connectMutation.isPending}
-                    className="flex-1"
+                    className="flex-1 px-4 py-3 bg-gradient-to-r from-dc-accent-500 to-dc-primary-500 text-white rounded-xl font-semibold hover:scale-105 transition-transform shadow-lg disabled:opacity-50 disabled:hover:scale-100"
                   >
                     {connectMutation.isPending ? 'Подключение...' : 'Подключить'}
-                  </Button>
-                  <Button
-                    variant="secondary"
+                  </button>
+                  <button
                     onClick={() => {
                       setShowTokenForm(null);
                       setTokenInput('');
                     }}
                     disabled={connectMutation.isPending}
+                    className="px-4 py-3 border border-dc-warm-400/60 text-dc-neutral-600 rounded-xl font-semibold hover:bg-dc-warm-100/60 transition-colors disabled:opacity-50"
                   >
                     Отмена
-                  </Button>
+                  </button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </GlassCard>
           </div>
         </div>
       )}

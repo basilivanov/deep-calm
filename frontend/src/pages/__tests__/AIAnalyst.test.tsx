@@ -65,7 +65,7 @@ describe('AIAnalyst', () => {
     await userEvent.selectOptions(select, '1');
 
     expect((select as HTMLSelectElement).value).toBe('1');
-    expect(screen.getByText('VK Massage (RELAX-60) - active')).toBeInTheDocument();
+    expect(screen.getByText(/VK Massage \(RELAX-60\)\s+—\s+active/)).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith('/api/v1/campaigns');
     expect(fetchMock).toHaveBeenCalledWith('/api/v1/analyst/health');
   });

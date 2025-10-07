@@ -12,9 +12,15 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    host: '0.0.0.0',
+    allowedHosts: ['dev.dc.vasiliy-ivanov.ru', 'localhost', '127.0.0.1'],
+    hmr: {
+      clientPort: 8083,
+      host: 'dev.dc.vasiliy-ivanov.ru'
+    },
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://dc-dev-api:8000',
         changeOrigin: true,
       },
     },
